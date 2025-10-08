@@ -39,7 +39,7 @@ Establecer una **línea base cognitiva** y monitorear **cambios sutiles** en:
 ---
 
 ## 📑 Documentación
-- **Diagramas C4** →
+- **Diagramas C4** → https://www.rapidcharts.ai/editor/74d1cae3-1738-43c3-8134-046daa184d47/View
 - **Diagramas UML** →  
 - **Informe en Word** → https://uao-my.sharepoint.com/:w:/g/personal/maria_cam_orozco_uao_edu_co/ESOyNBjM1AtBvD_HAi7yajkB9N5RzVdCMINbTpjee2A2Og?e=gUAHyH 
 
