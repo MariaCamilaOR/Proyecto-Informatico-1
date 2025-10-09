@@ -1,0 +1,32 @@
+{
+  "name": "doyouremember-database",
+  "version": "1.0.0",
+  "description": "Scripts de base de datos para DoYouRemember",
+  "main": "index.js",
+  "scripts": {
+    "migrate": "node scripts/migrate.js",
+    "rollback": "node scripts/rollback.js",
+    "seed": "node scripts/seed.js",
+    "reset": "node scripts/reset.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.10.9",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "database",
+    "migrations",
+    "postgresql",
+    "doyouremember"
+  ],
+  "author": "Grupo CAFESAJU",
+  "license": "MIT"
+}
