@@ -13,6 +13,8 @@ import ReportsTrends from "./pages/Reports/Trends";
 import ReportsDetail from "./pages/Reports/Detail";
 import AlertsSettings from "./pages/Alerts/Settings";
 import RemindersSettings from "./pages/Reminders/Settings";
+import CaregiversManage from "./pages/Caregivers/Manage";
+import CaregiversPatients from "./pages/Caregivers/Patients";
 
 export const appRoutes = (
   <>
@@ -29,6 +31,8 @@ export const appRoutes = (
       <Route path="/reports/:id" element={<ReportsDetail />} />
       <Route path="/alerts" element={<AlertsSettings />} />
       <Route path="/reminders" element={<RemindersSettings />} />
+      <Route path="/caregivers/manage" element={<CaregiversManage />} />
+      <Route path="/caregivers/patients" element={<CaregiversPatients />} />
     </Route>
     <Route path="*" element={<Navigate to="/" />} />
   </>

@@ -6,6 +6,8 @@ const menuItems = [
   { path: "/photos", label: "Fotos" },
   { path: "/describe", label: "Describir" },
   { path: "/reports", label: "Reportes" },
+  { path: "/caregivers/manage", label: "Gestionar Cuidadores" },
+  { path: "/caregivers/patients", label: "Mis Pacientes" },
   { path: "/alerts", label: "Alertas" },
   { path: "/reminders", label: "Recordatorios" }
 ];
