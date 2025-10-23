@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/**/*.ts": { "runtime": "nodejs20.x", "memory": 1024, "maxDuration": 30 }
+  },
+  "routes": [
+    { "src": "^/api/healthz$", "dest": "api/health.ts" },
+    { "src": "^/api/reports/patient/(?<id>[^/]+)$", "dest": "api/reports/get-by-patient.ts" },
+    { "src": "^/api/reports/generate$", "dest": "api/reports/generate.ts" },
+    { "src": "^/api/analysis/transcribe$", "dest": "api/analysis/transcribe.ts" },
+    { "src": "^/api/notifications/schedule$", "dest": "api/notifications/schedule.ts" },
+    { "src": "^/api/notifications/webhook$", "dest": "api/notifications/webhook.ts" },
+    { "src": "^/api/cron/daily-report$", "dest": "api/cron/daily-report.ts" }
+  ],
+  "crons": [
+    { "path": "/api/cron/daily-report", "schedule": "0 6 * * *" }
+  ]
+}

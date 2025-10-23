@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /patients/{pid}/{allPaths=**} {
+      allow read: if request.auth.token.linkedPatientIds.hasAny([pid]) || request.auth.token.role == 'doctor';
+      allow write: if request.auth.uid == pid || request.auth.token.role == 'doctor';
+    }
+  }
+}
