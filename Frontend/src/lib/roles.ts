@@ -23,6 +23,7 @@ export const ROLE_PERMISSIONS = {
   ],
   [ROLES.DOCTOR]: [
     "view_all_patients",
+    "view_patient_reports",
     "generate_reports",
     "view_detailed_analytics",
     "configure_alert_policies",

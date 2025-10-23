@@ -24,8 +24,44 @@ export default function CaregiversPatients() {
 
   const canViewPatients = user && hasPermission(user.role, "view_patient_reports");
 
-  // Datos demo de pacientes vinculados
-  const linkedPatients = [
+  // Datos demo según el rol
+  const linkedPatients = user?.role === "doctor" ? [
+    // Médicos ven todos los pacientes
+    {
+      id: "patient-1",
+      name: "María González",
+      email: "maria.gonzalez@ejemplo.com",
+      relationship: "Paciente",
+      status: "active",
+      lastActivity: "2023-10-22",
+      photosCount: 15,
+      sessionsCount: 8,
+      avgScore: 85,
+    },
+    {
+      id: "patient-2",
+      name: "Carlos Rodríguez",
+      email: "carlos.rodriguez@ejemplo.com",
+      relationship: "Paciente",
+      status: "active",
+      lastActivity: "2023-10-21",
+      photosCount: 22,
+      sessionsCount: 12,
+      avgScore: 78,
+    },
+    {
+      id: "patient-3",
+      name: "Ana Martínez",
+      email: "ana.martinez@ejemplo.com",
+      relationship: "Paciente",
+      status: "active",
+      lastActivity: "2023-10-20",
+      photosCount: 18,
+      sessionsCount: 10,
+      avgScore: 92,
+    },
+  ] : [
+    // Cuidadores ven solo sus pacientes vinculados
     {
       id: "patient-1",
       name: "María González",
@@ -75,9 +111,14 @@ export default function CaregiversPatients() {
         <Box flex="1" p={6}>
           <VStack spacing={6} align="stretch">
             <Box>
-              <Heading mb={2}>👥 Mis Pacientes</Heading>
+              <Heading mb={2}>
+                {user?.role === "doctor" ? "👩‍⚕️ Todos los Pacientes" : "👥 Mis Pacientes"}
+              </Heading>
               <Text color="gray.600">
-                Pacientes vinculados a tu cuenta de cuidador
+                {user?.role === "doctor" 
+                  ? "Pacientes bajo tu supervisión médica"
+                  : "Pacientes vinculados a tu cuenta de cuidador"
+                }
               </Text>
             </Box>
 
@@ -86,7 +127,10 @@ export default function CaregiversPatients() {
                 <CardBody>
                   <Alert status="info">
                     <AlertIcon />
-                    No tienes pacientes vinculados aún. Contacta a un paciente para que te invite.
+                    {user?.role === "doctor" 
+                      ? "No hay pacientes registrados en el sistema aún."
+                      : "No tienes pacientes vinculados aún. Contacta a un paciente para que te invite."
+                    }
                   </Alert>
                 </CardBody>
               </Card>
@@ -184,12 +228,25 @@ export default function CaregiversPatients() {
             {/* Información adicional */}
             <Box p={4} bg="green.50" borderRadius="md">
               <VStack spacing={3} align="start">
-                <Text fontWeight="bold">💡 Como cuidador puedes:</Text>
+                <Text fontWeight="bold">
+                  {user?.role === "doctor" ? "💡 Como médico puedes:" : "💡 Como cuidador puedes:"}
+                </Text>
                 <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
-                  <Text>• Ver el progreso y reportes de tus pacientes</Text>
-                  <Text>• Subir fotos en nombre del paciente</Text>
-                  <Text>• Configurar recordatorios para sesiones</Text>
-                  <Text>• Recibir alertas sobre cambios importantes</Text>
+                  {user?.role === "doctor" ? (
+                    <>
+                      <Text>• Ver el progreso y reportes de todos los pacientes</Text>
+                      <Text>• Generar reportes detallados y análisis</Text>
+                      <Text>• Configurar políticas de alertas globales</Text>
+                      <Text>• Exportar datos para análisis médico</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text>• Ver el progreso y reportes de tus pacientes</Text>
+                      <Text>• Subir fotos en nombre del paciente</Text>
+                      <Text>• Configurar recordatorios para sesiones</Text>
+                      <Text>• Recibir alertas sobre cambios importantes</Text>
+                    </>
+                  )}
                 </VStack>
               </VStack>
             </Box>
