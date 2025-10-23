@@ -1,0 +1,30 @@
+// roles: patient, caregiver, doctor
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasRole(r) { return request.auth.token.role == r; }
+    function isOwner(pid){ return request.auth != null && request.auth.uid == pid; }
+    function isLinked(pid){ return request.auth != null && request.auth.token.linkedPatientIds.hasAny([pid]); }
+
+    match /patients/{pid} {
+      allow read: if hasRole('doctor') || isOwner(pid) || isLinked(pid);
+      allow write: if isOwner(pid) || hasRole('doctor');
+    }
+    match /photos/{id} {
+      allow read: if isLinked(resource.data.patientId) || hasRole('doctor');
+      allow create, update, delete: if isOwner(request.resource.data.patientId) || hasRole('doctor');
+    }
+    match /sessions/{id} {
+      allow read: if isLinked(resource.data.patientId) || hasRole('doctor');
+      allow write: if isOwner(request.resource.data.patientId) || hasRole('doctor');
+    }
+    match /reports/{id} {
+      allow read: if isLinked(resource.data.patientId) || hasRole('doctor');
+      allow create: if hasRole('doctor');
+      allow delete: if false;
+    }
+    match /alert_policies/{id} {
+      allow read, write: if isLinked(request.resource.data.patientId) || hasRole('doctor');
+    }
+  }
+}
