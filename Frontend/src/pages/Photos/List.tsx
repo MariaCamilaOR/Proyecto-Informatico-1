@@ -41,12 +41,27 @@ export default function PhotosList() {
   };
 
   const handleDeletePhoto = (photoId: string) => {
-    toast({
-      title: "Eliminar foto",
-      description: `Eliminando foto ${photoId}`,
-      status: "warning",
-      duration: 2000,
-    });
+    (async () => {
+      try {
+        await api.delete(`/photos/${photoId}`);
+        toast({
+          title: "Foto eliminada",
+          description: `Se eliminó la foto ${photoId}`,
+          status: "success",
+          duration: 2000,
+        });
+        // recargar lista
+        loadPhotos();
+      } catch (e) {
+        console.error("delete photo error", e);
+        toast({
+          title: "Error",
+          description: `No se pudo eliminar la foto: ${(e as any)?.response?.data?.error || (e as any).message || e}`,
+          status: "error",
+          duration: 4000,
+        });
+      }
+    })();
   };
 
   const handleTagPhoto = (photo: any) => {
