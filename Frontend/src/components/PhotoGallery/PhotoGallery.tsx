@@ -121,7 +121,10 @@ export function PhotoGallery({
             <Card key={photo.id} overflow="hidden" cursor="pointer" _hover={{ shadow: "lg" }}>
               <Box position="relative">
                 <Image
-                  src={`https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=Foto+${photo.id}`}
+                  src={
+                    // prefer actual url from backend, otherwise placeholder
+                    (photo as any).url || `https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=Foto+${photo.id}`
+                  }
                   alt={`Foto ${photo.id}`}
                   w="full"
                   h="200px"
@@ -217,11 +220,11 @@ export function PhotoGallery({
                   <HStack spacing={2} fontSize="xs" color="gray.500">
                     <HStack spacing={1}>
                       <FaCalendarAlt />
-                      <Text>{formatDate(photo.createdAt)}</Text>
+                      <Text>{formatDate(photo.createdAt || '')}</Text>
                     </HStack>
                     <HStack spacing={1}>
                       <FaUser />
-                      <Text>{photo.uploadedBy}</Text>
+                      <Text>{photo.uploadedBy || '—'}</Text>
                     </HStack>
                   </HStack>
 
@@ -231,6 +234,12 @@ export function PhotoGallery({
                       {photo.description}
                     </Text>
                   )}
+                    {/* Link to raw URL for debugging */}
+                    {(photo as any).url && (
+                      <Text fontSize="xs" color="blue.500" as="a" href={(photo as any).url} target="_blank" rel="noreferrer">
+                        Abrir imagen
+                      </Text>
+                    )}
                 </VStack>
               </CardBody>
             </Card>
@@ -258,7 +267,7 @@ export function PhotoGallery({
               <VStack spacing={4}>
                 {/* Imagen grande */}
                 <Image
-                  src={`https://via.placeholder.com/500x300/4A90E2/FFFFFF?text=Foto+${selectedPhoto.id}`}
+                  src={(selectedPhoto as any).url || `https://via.placeholder.com/500x300/4A90E2/FFFFFF?text=Foto+${selectedPhoto.id}`}
                   alt={`Foto ${selectedPhoto.id}`}
                   w="full"
                   maxH="300px"

@@ -1,19 +1,15 @@
 import { Outlet, Navigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function ProtectedRoute() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    // Verificar si hay usuario demo
-    const demoUser = localStorage.getItem("demo-user");
-    setIsAuthenticated(!!demoUser);
-    setLoading(false);
-  }, []);
-
+  // While auth is being determined, show a loading placeholder
   if (loading) return <div style={{ padding: 24 }}>Cargando…</div>;
-  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
+
+  // If not authenticated, redirect to login
+  if (!isAuthenticated || !user) return <Navigate to="/login" replace state={{ from: location }} />;
+
   return <Outlet />;
 }

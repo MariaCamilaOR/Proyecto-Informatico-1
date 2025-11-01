@@ -1,5 +1,30 @@
 {
+  "name": "doyouremember-backend",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/server.js",
+  "scripts": {
+  "dev": "ts-node-dev --respawn --transpile-only src/start.ts",
+    "set-claims": "ts-node-dev --respawn --transpile-only src/scripts/setClaims.ts",
+    "build": "tsc -p .",
+    "start": "node dist/server.js"
+  },
   "dependencies": {
-    "firebase": "^12.4.0"
+    "cors": "^2.8.5",
+    "dotenv": "^16.1.4",
+    "express": "^4.18.2",
+    "firebase": "^12.4.0",
+    "firebase-admin": "^11.11.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.7",
+    "@types/node": "^20.4.2",
+    "@types/uuid": "^9.0.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.6"
   }
 }

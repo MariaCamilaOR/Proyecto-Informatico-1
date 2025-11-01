@@ -5,15 +5,31 @@ import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { FaPlus, FaFilter } from "react-icons/fa";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "../../lib/api";
 
 export default function PhotosList() {
   const { user } = useAuth();
-  const [photos] = useState([]); // En una app real, esto vendría de una API
+  const [photos, setPhotos] = useState<any[]>([]);
   const toast = useToast();
 
-  const canViewPhotos = user && hasPermission(user.role, "view_own_photos");
-  const canEditPhotos = user && hasPermission(user.role, "upload_photos");
+  const loadPhotos = async () => {
+    try {
+      const patientId = user?.linkedPatientIds?.[0] || "demo-patient-123";
+      const resp = await api.get(`/photos/patient/${patientId}`);
+      setPhotos(resp.data || []);
+    } catch (e) {
+      console.error("PhotosList loadPhotos error:", (e as any)?.response?.status, (e as any)?.response?.data || (e as any).message || e);
+    }
+  };
+
+  useEffect(() => {
+    loadPhotos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const canViewPhotos = !!user && hasPermission(user.role, "view_own_photos");
+  const canEditPhotos = !!user && hasPermission(user.role, "upload_photos");
 
   const handleEditPhoto = (photo: any) => {
     toast({
@@ -98,7 +114,7 @@ export default function PhotosList() {
             {/* Estadísticas */}
             <HStack spacing={4}>
               <Badge colorScheme="blue" p={2} borderRadius="md">
-                Total: {photos.length || 3} fotos
+                Total: {photos.length} fotos
               </Badge>
               <Badge colorScheme="green" p={2} borderRadius="md">
                 Descritas: 1

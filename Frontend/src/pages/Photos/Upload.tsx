@@ -1,4 +1,8 @@
 import { Box, Heading, Text, Flex, VStack, Card, CardBody, Alert, AlertIcon } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { getIdToken } from "../../lib/auth";
+import { api } from "../../lib/api";
+import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { PhotoUploader } from "../../components/PhotoUpload/PhotoUploader";
@@ -10,8 +14,47 @@ export default function PhotosUpload() {
 
   const handlePhotoUpload = (files: File[]) => {
     console.log("Fotos subidas:", files);
-    // Aquí se implementaría la lógica real de subida
+    // Implementación: subir archivos al backend que los guardará en Storage + Firestore
+    const upload = async () => {
+      try {
+        const form = new FormData();
+        files.forEach((f) => form.append("files", f));
+        // For demo users, the frontend uses demo patient id from useAuth
+        const patientId = user?.linkedPatientIds?.[0] || "demo-patient-123";
+        form.append("patientId", patientId);
+
+        // Use shared axios instance so Authorization header is attached automatically
+        const resp = await api.post(`/photos/upload`, form);
+        const data = resp.data;
+        console.log("Upload result:", data);
+        // after successful upload, refresh gallery
+        await loadPhotos();
+      } catch (e) {
+        console.error("Upload failed", e);
+      }
+    };
+    upload();
   };
+
+  const [photos, setPhotos] = useState<any[]>([]);
+
+  const loadPhotos = async () => {
+    try {
+  const patientId = user?.linkedPatientIds?.[0] || "demo-patient-123";
+  const resp = await api.get(`/photos/patient/${patientId}`);
+  setPhotos(resp.data || []);
+    } catch (e) {
+      // Log detailed error info to help debug backend 500 responses
+      // axios error has response.data with backend error message
+      // eslint-disable-next-line no-console
+      console.error("loadPhotos error:", (e as any)?.response?.status, (e as any)?.response?.data || (e as any).message || e);
+    }
+  };
+
+  useEffect(() => {
+    loadPhotos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const canUpload = user && hasPermission(user.role, "upload_photos");
 
@@ -66,6 +109,13 @@ export default function PhotosUpload() {
                     acceptedFormats={["image/jpeg", "image/jpg", "image/png"]}
                   />
                 </VStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Heading size="md" mb={4}>📚 Galería</Heading>
+                <PhotoGallery photos={photos} canEdit={false} canDelete={false} />
               </CardBody>
             </Card>
 

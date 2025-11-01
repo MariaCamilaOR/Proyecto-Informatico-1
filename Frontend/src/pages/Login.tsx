@@ -1,6 +1,8 @@
-import { Button, Container, Heading, VStack, Text, Box, Select, FormControl, FormLabel, HStack, Badge } from "@chakra-ui/react";
+import { Button, Container, Heading, VStack, Text, Box, Select, FormControl, FormLabel, HStack, Badge, Input } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { auth } from "../lib/firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { ROLES } from "../lib/roles";
 import type { Role } from "../types/auth";
 
@@ -13,6 +15,37 @@ export default function Login() {
     localStorage.setItem("demo-user", "true");
     localStorage.setItem("demo-role", selectedRole);
     navigate("/");
+  };
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [tokenClaims, setTokenClaims] = useState<any | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<{ idToken: string; uid: string } | null>(null);
+
+  const handleEmailSignIn = async () => {
+    setLoading(true);
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      // Ensure token/claims are available before navigating
+      try {
+        const tokenResult = await cred.user.getIdTokenResult(true);
+        console.log("ID token claims:", tokenResult.claims);
+      } catch (e) {
+        console.warn("Could not read token claims immediately", e);
+      }
+  // navigate to homepage after successful sign in
+      // Instead of navigating immediately, show claims so you can verify them.
+      const tokenResult = await cred.user.getIdTokenResult(true);
+      setTokenClaims(tokenResult.claims || {});
+      setTokenInfo({ idToken: await cred.user.getIdToken(), uid: cred.user.uid });
+      // Do not auto-navigate; user can press continue when ready.
+    } catch (e) {
+      console.error("Login failed", e);
+      alert("Login failed. Check credentials.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getRoleDescription = (role: Role) => {
@@ -56,6 +89,17 @@ export default function Login() {
         <Heading size="md">Iniciar sesión</Heading>
         
         <VStack spacing={4} w="full">
+          {/* Email sign-in */}
+          <FormControl>
+            <FormLabel>Email</FormLabel>
+            <Input value={email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)} placeholder="email@example.com" />
+          </FormControl>
+          <FormControl>
+            <FormLabel>Contraseña</FormLabel>
+            <Input type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} placeholder="********" />
+          </FormControl>
+          <Button colorScheme="green" size="md" w="full" isLoading={loading} onClick={handleEmailSignIn}>Iniciar con email</Button>
+
           <FormControl>
             <FormLabel>Selecciona tu rol para la demo:</FormLabel>
             <Select 
@@ -91,6 +135,17 @@ export default function Login() {
           >
             🚀 Entrar como {selectedRole}
           </Button>
+
+          {tokenClaims && (
+            <Box w="full" p={3} bg="gray.50" borderRadius="md">
+              <Heading size="sm">Token claims (inspecciona antes de continuar)</Heading>
+              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(tokenClaims, null, 2)}</pre>
+              <Text fontSize="xs" color="gray.600">UID: {tokenInfo?.uid}</Text>
+              <HStack mt={2}>
+                <Button colorScheme="blue" size="sm" onClick={() => navigate('/')}>Continuar al dashboard</Button>
+              </HStack>
+            </Box>
+          )}
           
           <Text fontSize="sm" color="gray.500" textAlign="center">
             Esta es una versión de demostración. 
