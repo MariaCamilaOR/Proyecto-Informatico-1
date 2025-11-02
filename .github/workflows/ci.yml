@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install
+        run: |
+          cd Backend
+          npm ci
+      - name: Setup GCP credentials from secret
+        if: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=./sa.json" >> $GITHUB_ENV
+      - name: Run backend credential check
+        run: |
+          cd Backend
+          node ./scripts/check-creds.js
+      - name: Build (TypeScript)
+        run: |
+          cd Backend
+          npm run build
