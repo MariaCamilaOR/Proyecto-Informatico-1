@@ -9,8 +9,8 @@ export default function ReportsDetail() {
       <Flex>
         <Sidebar />
         <Box flex="1" p={6}>
-          <Heading mb={6}>Detalle del Reporte</Heading>
-          <Text>TODO: Vista detallada de un reporte específico</Text>
+          <Heading mb={2} color="whiteAlpha.900">Detalle del Reporte</Heading>
+          <Text color="gray.300">TODO: Vista detallada de un reporte específico.</Text>
         </Box>
       </Flex>
     </Box>

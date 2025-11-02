@@ -1,87 +1,115 @@
+// src/hooks/useAuth.ts
 import { useState, useEffect } from "react";
-import type { User, AuthState, Role } from "../types/auth";
-import { ROLES } from "../lib/roles";
-import { auth } from "../lib/firebase";
-import { onAuthStateChanged, getIdTokenResult } from "firebase/auth";
+import type { User as FbUser } from "firebase/auth";
+import { onAuthStateChanged, getIdTokenResult, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../lib/firebase";
+import { normalizeRole, ROLES, type Role } from "../lib/roles";
+
+export type AppUser = {
+  uid: string;
+  email: string;
+  role?: Role;
+  linkedPatientIds: string[];
+  displayName?: string;
+  photoURL?: string;
+  isEmailVerified: boolean;
+  createdAt: string;
+};
+
+export type AuthState = {
+  user: AppUser | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+};
+
+const DEMO = import.meta.env.VITE_DEMO === "true";
 
 export function useAuth(): AuthState {
-  const [authState, setAuthState] = useState<AuthState>({
+  const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
     error: null,
-    isAuthenticated: false
+    isAuthenticated: false,
   });
 
   useEffect(() => {
-    let unsub = () => {};
-
-    // Prefer real Firebase auth if available
-    try {
-      unsub = onAuthStateChanged(auth, async (u) => {
-        if (u) {
-          // get custom claims from the ID token
-          const idTokenResult = await getIdTokenResult(u, true);
-          const claims: any = idTokenResult.claims || {};
-          const role = (claims.role as Role) || (localStorage.getItem("demo-role") as Role) || ROLES.PATIENT;
-          const linked = (claims.linkedPatientIds as string[]) || [localStorage.getItem("demo-patient-123") || "demo-patient-123"];
-
-          const userObj: User = {
-            uid: u.uid,
-            email: u.email || "",
-            role,
-            linkedPatientIds: linked,
-            displayName: u.displayName || undefined,
-            photoURL: u.photoURL || undefined,
-            isEmailVerified: u.emailVerified,
-            createdAt: new Date().toISOString()
-          };
-
-          setAuthState({ user: userObj, loading: false, error: null, isAuthenticated: true });
-        } else {
-          // fallback to demo localStorage mode
-          const demoUser = localStorage.getItem("demo-user");
-          const demoRole = (localStorage.getItem("demo-role") as Role) || ROLES.PATIENT;
-
-          if (demoUser) {
-            const user: User = {
-              uid: "demo-user-123",
-              email: "demo@dyr.com",
-              role: demoRole,
-              linkedPatientIds: demoRole === ROLES.PATIENT ? ["demo-patient-123"] : ["demo-patient-123"],
-              displayName: "Usuario Demo",
-              photoURL: undefined,
-              isEmailVerified: true,
-              createdAt: new Date().toISOString()
-            };
-            setAuthState({ user, loading: false, error: null, isAuthenticated: true });
-          } else {
-            setAuthState({ user: null, loading: false, error: null, isAuthenticated: false });
+    const unsub = onAuthStateChanged(auth, async (u: FbUser | null) => {
+      try {
+        if (!u) {
+          // SIN demo: no role “pegado”
+          if (!DEMO) {
+            setState({ user: null, loading: false, error: null, isAuthenticated: false });
+            return;
           }
+          // DEMO opcional
+          const demo = localStorage.getItem("demo-user");
+          const demoRole = normalizeRole(localStorage.getItem("demo-role") || "") || ROLES.PATIENT;
+          if (demo) {
+            setState({
+              user: {
+                uid: "demo-user-123",
+                email: "demo@dyr.com",
+                role: demoRole,
+                linkedPatientIds: ["demo-patient-123"],
+                displayName: "Usuario Demo",
+                isEmailVerified: true,
+                createdAt: new Date().toISOString(),
+              },
+              loading: false,
+              error: null,
+              isAuthenticated: true,
+            });
+          } else {
+            setState({ user: null, loading: false, error: null, isAuthenticated: false });
+          }
+          return;
         }
-      });
-    } catch (e) {
-      // If anything goes wrong, fallback to demo mode as before
-      const demoUser = localStorage.getItem("demo-user");
-      const demoRole = (localStorage.getItem("demo-role") as Role) || ROLES.PATIENT;
-      if (demoUser) {
-        const user: User = {
-          uid: "demo-user-123",
-          email: "demo@dyr.com",
-          role: demoRole,
-          linkedPatientIds: demoRole === ROLES.PATIENT ? ["demo-patient-123"] : ["demo-patient-123"],
-          displayName: "Usuario Demo",
-          photoURL: undefined,
-          isEmailVerified: true,
-          createdAt: new Date().toISOString()
+
+        // claims (si luego usas custom claims)
+        const token = await getIdTokenResult(u, true);
+        const claims = token?.claims ?? {};
+        const roleFromClaims = normalizeRole(String((claims as any).role));
+
+        // perfil en Firestore
+        const ref = doc(db, "users", u.uid);
+        const snap = await getDoc(ref);
+        const roleFromDb = snap.exists() ? normalizeRole(String(snap.data()?.role)) : undefined;
+
+        const role: Role | undefined = roleFromDb || roleFromClaims;
+
+        // linked patients
+        const linked: string[] =
+          (snap.exists() && Array.isArray(snap.data()?.linkedPatientIds) && snap.data()?.linkedPatientIds) ||
+          (role === ROLES.PATIENT ? [u.uid] : ["demo-patient-123"]);
+
+        const userObj: AppUser = {
+          uid: u.uid,
+          email: u.email ?? "",
+          role,
+          linkedPatientIds: linked,
+          displayName: u.displayName ?? undefined,
+          photoURL: u.photoURL ?? undefined,
+          isEmailVerified: u.emailVerified,
+          createdAt: new Date().toISOString(),
         };
-        setAuthState({ user, loading: false, error: null, isAuthenticated: true });
-      } else {
-        setAuthState({ user: null, loading: false, error: null, isAuthenticated: false });
+
+        // Si no hay rol en DB/claims -> cerramos sesión (no queda rol colgado)
+        if (!userObj.role) {
+          await signOut(auth);
+          setState({ user: null, loading: false, error: null, isAuthenticated: false });
+          return;
+        }
+
+        setState({ user: userObj, loading: false, error: null, isAuthenticated: true });
+      } catch (e: any) {
+        setState({ user: null, loading: false, error: e?.message ?? "Auth error", isAuthenticated: false });
       }
-    }
+    });
 
     return () => unsub();
   }, []);
 
-  return authState;
+  return state;
 }

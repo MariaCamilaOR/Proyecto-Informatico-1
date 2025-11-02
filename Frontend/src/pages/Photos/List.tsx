@@ -7,11 +7,13 @@ import { hasPermission } from "../../lib/roles";
 import { FaPlus, FaFilter } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
+import { useNavigate } from "react-router-dom";
 
 export default function PhotosList() {
   const { user } = useAuth();
   const [photos, setPhotos] = useState<any[]>([]);
   const toast = useToast();
+  const nav = useNavigate();
 
   const loadPhotos = async () => {
     try {
@@ -26,31 +28,23 @@ export default function PhotosList() {
   useEffect(() => {
     loadPhotos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.uid]);
 
-  const canViewPhotos = !!user && hasPermission(user.role, "view_own_photos");
-  const canEditPhotos = !!user && hasPermission(user.role, "upload_photos");
+  const canViewPhotos =
+    !!user && (hasPermission(user.role, "view_own_photos") || hasPermission(user.role, "view_linked_patients"));
+
+  const canEditPhotos =
+    !!user && (hasPermission(user.role, "upload_photos") || hasPermission(user.role, "upload_photos_for_patient"));
 
   const handleEditPhoto = (photo: any) => {
-    toast({
-      title: "Editar foto",
-      description: `Editando foto ${photo.id}`,
-      status: "info",
-      duration: 2000,
-    });
+    toast({ title: "Editar foto", description: `Editando foto ${photo.id}`, status: "info", duration: 2000 });
   };
 
   const handleDeletePhoto = (photoId: string) => {
     (async () => {
       try {
         await api.delete(`/photos/${photoId}`);
-        toast({
-          title: "Foto eliminada",
-          description: `Se eliminó la foto ${photoId}`,
-          status: "success",
-          duration: 2000,
-        });
-        // recargar lista
+        toast({ title: "Foto eliminada", description: `Se eliminó la foto ${photoId}`, status: "success", duration: 2000 });
         loadPhotos();
       } catch (e) {
         console.error("delete photo error", e);
@@ -65,12 +59,7 @@ export default function PhotosList() {
   };
 
   const handleTagPhoto = (photo: any) => {
-    toast({
-      title: "Etiquetar foto",
-      description: `Etiquetando foto ${photo.id}`,
-      status: "info",
-      duration: 2000,
-    });
+    toast({ title: "Etiquetar foto", description: `Etiquetando foto ${photo.id}`, status: "info", duration: 2000 });
   };
 
   if (!canViewPhotos) {
@@ -98,28 +87,12 @@ export default function PhotosList() {
             <Flex justify="space-between" align="center">
               <Box>
                 <Heading mb={2}>📸 Galería de Fotos</Heading>
-                <Text color="gray.600">
-                  Tus fotos familiares y recuerdos importantes
-                </Text>
+                <Text color="gray.600">Tus fotos familiares y recuerdos importantes</Text>
               </Box>
               <HStack spacing={3}>
-                <Button
-                  leftIcon={<FaFilter />}
-                  variant="outline"
-                  size="sm"
-                >
-                  Filtrar
-                </Button>
+                <Button leftIcon={<FaFilter />} variant="outline" size="sm">Filtrar</Button>
                 {canEditPhotos && (
-                  <Button
-                    leftIcon={<FaPlus />}
-                    colorScheme="blue"
-                    size="sm"
-                    onClick={() => {
-                      // Navegar a upload
-                      window.location.href = "/photos/upload";
-                    }}
-                  >
+                  <Button leftIcon={<FaPlus />} colorScheme="blue" size="sm" onClick={() => nav("/photos/upload")}>
                     Subir Fotos
                   </Button>
                 )}
@@ -128,15 +101,9 @@ export default function PhotosList() {
 
             {/* Estadísticas */}
             <HStack spacing={4}>
-              <Badge colorScheme="blue" p={2} borderRadius="md">
-                Total: {photos.length} fotos
-              </Badge>
-              <Badge colorScheme="green" p={2} borderRadius="md">
-                Descritas: 1
-              </Badge>
-              <Badge colorScheme="orange" p={2} borderRadius="md">
-                Sin describir: 2
-              </Badge>
+              <Badge colorScheme="blue" p={2} borderRadius="md">Total: {photos.length} fotos</Badge>
+              <Badge colorScheme="green" p={2} borderRadius="md">Descritas: 1</Badge>
+              <Badge colorScheme="orange" p={2} borderRadius="md">Sin describir: 2</Badge>
             </HStack>
 
             {/* Galería */}
@@ -149,20 +116,14 @@ export default function PhotosList() {
               canDelete={canEditPhotos}
             />
 
-            {/* Información adicional */}
+            {/* Vacio */}
             {photos.length === 0 && (
               <Box textAlign="center" py={8}>
                 <Text fontSize="lg" color="gray.500" mb={4}>
                   No tienes fotos subidas aún
                 </Text>
                 {canEditPhotos && (
-                  <Button
-                    leftIcon={<FaPlus />}
-                    colorScheme="blue"
-                    onClick={() => {
-                      window.location.href = "/photos/upload";
-                    }}
-                  >
+                  <Button leftIcon={<FaPlus />} colorScheme="blue" onClick={() => nav("/photos/upload")}>
                     Subir tu primera foto
                   </Button>
                 )}

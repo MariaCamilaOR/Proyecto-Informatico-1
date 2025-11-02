@@ -121,3 +121,7 @@ playwright/.cache/
 
 # Local development
 .local
+
+echo Backend/keys/>> .gitignore
+echo Backend/keys/*.json>> .gitignore
+Backend/keys/

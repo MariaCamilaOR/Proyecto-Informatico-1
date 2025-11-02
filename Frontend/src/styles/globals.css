@@ -1,13 +1,208 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root{
+  --bg:#0d1117;
+  --bg2:#111827;
+  --card:#161b22;
+  --text:#f1f1f1;
+  --muted:#cbd5e1;
+  --border:#30363d;
+  --primary:#2563eb;       /* botones */
+  --primary-acc:#58a6ff;   /* títulos/enlaces */
+  --danger:#ef4444;
+  --google:#db4437;
+  --shadow:rgba(0,0,0,.4);
+  --glow:rgba(37,99,235,.4);
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body{
+  background-color: var(--bg ) !important;
+  color: var(--text);
+  font-family: "Times New Roman", serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
+
+/* ===== Layout ===== */
+.layout-container{ display:flex; flex-direction:column; min-height:100vh; }
+.layout-header{
+  background: var(--bg2);
+  padding: 20px;
+  text-align: center;
+  color: var(--primary-acc);
+  font-family: "Georgia", serif;
+  border-bottom: 2px solid var(--primary);
+  font-size: 24px;
+  letter-spacing: .5px;
+  text-shadow: 0 0 10px rgba(37,99,235,.5);
+}
+.layout-content{ flex:1; display:flex; justify-content:center; align-items:center; padding:40px; }
+.layout-footer{
+  background:#0a0e17; text-align:center; padding:10px; color:#aaa; font-size:14px;
+  border-top:1px solid #1f2937;
+}
+
+/* ===== Card (auth, modales, etc.) ===== */
+.card{
+  background: var(--card);
+  border-radius: 10px;
+  padding: 25px;
+  width: 380px;
+  box-shadow: 0 0 20px var(--shadow);
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+}
+.card:hover{ transform: translateY(-3px); box-shadow: 0 0 25px rgba(37,99,235,.3); }
+.card h2{
+  text-align:center; font-family:"Georgia", serif; color:var(--primary-acc);
+  margin: 0 0 16px;
+}
+
+/* ===== Forms ===== */
+input, select, textarea{
+  display:block; width:100%;
+  margin:10px 0; padding:10px; border-radius:6px;
+  border:1px solid var(--border); background:var(--bg);
+  color:#fff; font-size:15px;
+}
+input::placeholder, textarea::placeholder{ color:#9aa4b2; }
+input:focus, select:focus, textarea:focus{
+  border-color: var(--primary); outline:none; box-shadow:0 0 6px var(--glow);
+}
+/* botones de formularios full width */
+.card form button{ width:100%; margin-top:10px; }
+
+/* ===== Buttons ===== */
+button{
+  background: var(--primary);
+  border:none; color:white;
+  padding:10px 20px; margin:10px 5px;
+  border-radius:6px; cursor:pointer;
+  font-family:"Georgia", serif; font-size:15px;
+  transition: background .3s ease, transform .2s ease, opacity .2s ease;
+}
+button:hover{ opacity:.9; transform:translateY(-2px); }
+button:disabled{ opacity:.6; cursor:not-allowed; }
+button.google{ background: var(--google); width:100%; }
+button.logout{ background: var(--danger); }
+
+/* ===== Links & feedback ===== */
+a{ color: var(--primary-acc); text-decoration:none; font-size:14px; }
+a:hover{ text-decoration:underline; }
+.error{ color: var(--danger); font-size:14px; margin-top:8px; text-align:center; }
+
+.muted{ color: var(--muted); font-size:14px; }
+.divider{ height:1px; width:100%; background:rgba(255,255,255,.06); margin:10px 0; }
+
+/* ===== Portal toolbars / filtros ===== */
+.portal{ width: min(1024px, 95vw); margin: 0 auto; }
+.portal-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:16px;
+}
+.portal-title{
+  font-family:"Georgia", serif; color:var(--primary-acc); font-size:20px; margin:0;
+}
+.toolbar{ display:flex; align-items:center; gap:8px; }
+.toolbar input, .toolbar select{ margin:0; height:36px; padding:6px 10px; }
+.back-btn{
+  background:transparent; border:1px solid var(--primary); color:var(--primary-acc);
+  padding:8px 14px; border-radius:999px;
+}
+.back-btn:hover{ background: rgba(37,99,235,.08); }
+
+/* ===== Métricas ===== */
+.metric-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.metric-card{
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:14px; box-shadow:0 2px 14px rgba(0,0,0,.25);
+}
+.metric-title{ color:var(--muted); font-size:12px; margin:0 0 6px; }
+.metric-value{ color:var(--text); font-size:22px; font-weight:bold; }
+
+/* ===== Tabla ===== */
+.table{ width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
+.table th, .table td{ border:1px solid var(--border); padding:10px; text-align:left; }
+.table th{ background:rgba(255,255,255,.04); color:var(--primary-acc); font-weight:600; }
+.table tr:hover{ background:rgba(255,255,255,.03); }
+
+/* ===== Badges ===== */
+.badge{
+  display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px;
+  background:rgba(88,166,255,.15); color:var(--primary-acc);
+  border:1px solid rgba(88,166,255,.35);
+}
+.badge.danger{ background:rgba(239,68,68,.15); color:#ff7b7b; border-color:rgba(239,68,68,.35); }
+
+/* ===== RoleSelector (tabs) ===== */
+.role-tabs{ display:flex; gap:8px; justify-content:center; margin:10px 0 6px; }
+.role-tab{
+  background:transparent; border:1px solid var(--border); color:var(--text);
+  padding:6px 12px; border-radius:999px; cursor:pointer; transition:all .2s;
+}
+.role-tab:hover{ border-color:var(--primary); color:var(--primary-acc); }
+.role-tab.active{ border-color:var(--primary); color:var(--primary-acc); box-shadow:0 0 6px var(--glow); }
+
+/* ===== Responsive ===== */
+@media (max-width:900px){ .metric-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:600px){
+  .card{ width:90%; }
+  .dashboard-card{ width:95%; padding:25px; }
+  .dashboard-title{ font-size:22px; }
+  .metric-grid{ grid-template-columns:1fr; }
+}
+/* === Mejora de contraste de tipografías Chakra y headings === */
+:root {
+  --heading:#9cc1ff;     /* título principal más legible */
+  --subtle:#bcd3ff;      /* subtítulos/labels */
+}
+
+/* Chakra headings en dark */
+.chakra-heading {
+  color: var(--heading) !important;
+  letter-spacing: .2px;
+}
+
+/* Textos secundarios de secciones/chips */
+.section-muted,
+.chakra-text[data-muted="true"] {
+  color: var(--muted) !important;
+}
+
+/* === Sidebar dark (coherente con global) === */
+.dyr-sidebar {
+  width: 250px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.dyr-sidebar a {
+  display: block;
+  color: var(--text);
+  font-family: "Times New Roman", serif;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+  text-decoration: none;
+}
+
+.dyr-sidebar a:hover {
+  background: rgba(88,166,255,.08);
+  color: var(--primary-acc);
+  box-shadow: 0 0 0 1px rgba(88,166,255,.25) inset;
+}
+
+.dyr-sidebar a.active {
+  background: rgba(37,99,235,.12);
+  color: var(--primary-acc);
+  box-shadow: 0 0 0 1px rgba(37,99,235,.35) inset, 0 0 10px var(--glow);
+}
+
+/* Tarjetas del dashboard con mejor legibilidad de títulos/chips */
+.chakra-card .chakra-heading {
+  color: var(--subtle) !important;
+}
+

@@ -1,24 +1,26 @@
 import { Box, Heading, Text, Flex, VStack, Alert, AlertIcon } from "@chakra-ui/react";
-import { Navbar } from "../../components/Layout/Navbar";
-import { Sidebar } from "../../components/Layout/Sidebar";
-import { OnboardingWizard } from "../../components/Onboarding/OnboardingWizard";
-import { useAuth } from "../../hooks/useAuth";
+import { Navbar } from "./../components/Layout/Navbar";
+import { Sidebar } from "./../components/Layout/Sidebar";
+import { OnboardingWizard } from "./../components/Onboarding/OnboardingWizard";
+import { useAuth } from "./../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 export default function Onboarding() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isOnboardingActive, setIsOnboardingActive] = useState(true);
 
   const handleOnboardingComplete = (data: any) => {
     console.log("Onboarding completado:", data);
     setIsOnboardingActive(false);
-    // Aquí se guardaría la información en el backend
+    navigate("/", { replace: true });
   };
 
   const handleOnboardingSkip = () => {
     console.log("Onboarding omitido");
     setIsOnboardingActive(false);
-    // Redirigir al dashboard
+    navigate("/", { replace: true });
   };
 
   if (!isOnboardingActive) {
@@ -38,7 +40,7 @@ export default function Onboarding() {
                   </Text>
                 </VStack>
               </Alert>
-              
+
               <VStack spacing={4} align="start">
                 <Heading size="md">Próximos pasos:</Heading>
                 <VStack align="start" spacing={2} fontSize="sm" color="gray.600">
@@ -61,10 +63,7 @@ export default function Onboarding() {
       <Flex>
         <Sidebar />
         <Box flex="1" p={6}>
-          <OnboardingWizard
-            onComplete={handleOnboardingComplete}
-            onSkip={handleOnboardingSkip}
-          />
+          <OnboardingWizard onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />
         </Box>
       </Flex>
     </Box>

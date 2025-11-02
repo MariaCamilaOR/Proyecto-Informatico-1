@@ -1,21 +1,45 @@
-import { Box, Heading, Text, Flex, VStack, Card, CardBody, Image, Alert, AlertIcon } from "@chakra-ui/react";
+import { useState } from "react";
+import {
+  Box,
+  Heading,
+  Text,
+  Flex,
+  VStack,
+  Card,
+  CardBody,
+  Image,
+  Alert,
+  AlertIcon,
+} from "@chakra-ui/react";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { VoiceRecorder } from "../../components/VoiceRecording/VoiceRecorder";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
-import { useState } from "react";
+import { api } from "../../lib/api";
 
 export default function DescribeVoice() {
   const { user } = useAuth();
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
-  const handleRecordingComplete = (audioBlob: Blob, duration: number) => {
-    console.log("Grabación completada:", { audioBlob, duration });
-    // Aquí se implementaría la lógica para guardar el audio
-  };
+  const canRecord = !!user && hasPermission(user.role, "describe_photos");
 
-  const canRecord = user && hasPermission(user.role, "describe_photos");
+  const handleRecordingComplete = async (audioBlob: Blob, duration: number) => {
+    try {
+      // Subir audio (demo de endpoint)
+      const form = new FormData();
+      form.append("audio", audioBlob, "descripcion.webm");
+      form.append("duration", String(duration));
+      form.append("photoId", selectedPhoto || "");
+      form.append("patientId", user?.linkedPatientIds?.[0] || user?.uid || "demo-patient");
+      await api.post("/descriptions/voice", form);
+      // eslint-disable-next-line no-console
+      console.log("Grabación enviada", { duration });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Error subiendo audio", e);
+    }
+  };
 
   if (!canRecord) {
     return (
@@ -42,23 +66,23 @@ export default function DescribeVoice() {
         <Box flex="1" p={6}>
           <VStack spacing={6} align="stretch">
             <Box>
-              <Heading mb={2}>🎤 Describir por Voz</Heading>
-              <Text color="gray.600">
+              <Heading color="whiteAlpha.900" mb={2}>
+                🎤 Describir por Voz
+              </Heading>
+              <Text color="gray.300">
                 Graba una descripción detallada de la foto seleccionada usando tu voz.
               </Text>
             </Box>
 
-            {/* Selección de foto */}
             <Card>
               <CardBody>
                 <VStack spacing={4}>
                   <Text fontWeight="bold">📸 Selecciona una foto para describir:</Text>
-                  
-                  {/* Demo: Foto de ejemplo */}
-                  <Box 
-                    p={4} 
-                    border="2px dashed" 
-                    borderColor="gray.300" 
+
+                  <Box
+                    p={4}
+                    border="2px dashed"
+                    borderColor="gray.300"
                     borderRadius="md"
                     cursor="pointer"
                     _hover={{ borderColor: "blue.400" }}
@@ -88,31 +112,14 @@ export default function DescribeVoice() {
               </CardBody>
             </Card>
 
-            {/* Grabador de voz */}
             {selectedPhoto && (
               <VoiceRecorder
                 onRecordingComplete={handleRecordingComplete}
                 maxDurationSeconds={300}
-                patientId={user?.uid || "demo-patient"}
+                patientId={user?.linkedPatientIds?.[0] || user?.uid || "demo-patient"}
                 photoId={selectedPhoto}
               />
             )}
-
-            {/* Información adicional */}
-            <Card>
-              <CardBody>
-                <VStack spacing={3} align="start">
-                  <Text fontWeight="bold">💡 Consejos para una buena descripción:</Text>
-                  <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
-                    <Text>• Describe quién aparece en la foto</Text>
-                    <Text>• Menciona el lugar donde fue tomada</Text>
-                    <Text>• Explica qué está pasando en la imagen</Text>
-                    <Text>• Recuerda detalles como la ropa, objetos, etc.</Text>
-                    <Text>• Habla sobre tus sentimientos o recuerdos</Text>
-                  </VStack>
-                </VStack>
-              </CardBody>
-            </Card>
           </VStack>
         </Box>
       </Flex>
