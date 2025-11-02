@@ -24,32 +24,9 @@ router.get("/patient/:id", async (req, res) => {
       } else if (typeof createdAt === "string") {
         createdAtIso = createdAt;
       }
-        items.push({ id: doc.id, ...data, createdAt: createdAtIso });
-      });
-      // Generate fresh signed URLs for any item that has a storagePath.
-      // This avoids relying on previously-stored signed URLs which may have expired.
-      const bucket = storage.bucket();
-      const withUrls = await Promise.all(
-        items.map(async (it) => {
-          if (it.storagePath) {
-            try {
-              const file = bucket.file(it.storagePath);
-              // create a short-lived signed url (7 days)
-              const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
-              const [signedUrl] = await file.getSignedUrl({ action: "read", expires });
-              return { ...it, url: signedUrl };
-            } catch (err) {
-              // if signing fails, log and return item without url
-              // eslint-disable-next-line no-console
-              console.warn("Could not create signed url for", it.storagePath, err && (err as any).message);
-              return { ...it, url: null };
-            }
-          }
-          return it;
-        })
-      );
-
-      return res.json(withUrls);
+      items.push({ id: doc.id, ...data, createdAt: createdAtIso });
+    });
+    return res.json(items);
   } catch (e: any) {
     // log full error to console for easier debugging
     // eslint-disable-next-line no-console
@@ -110,10 +87,13 @@ router.post("/upload", upload.array("files", 10), async (req, res) => {
       const f = bucket.file(destPath);
       await f.save(file.buffer, { contentType: file.mimetype });
 
-      // We persist the storagePath and generate signed URLs dynamically on read.
+      // Make a signed URL valid for 7 days for testing (adjust as needed)
+      const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const [signedUrl] = await f.getSignedUrl({ action: "read", expires });
+
       const docRef = await firestore.collection("photos").add({
         patientId,
-        url: null,
+        url: signedUrl,
         storagePath: destPath,
         description: null,
         tags: [],
@@ -140,32 +120,6 @@ router.post("/upload", upload.array("files", 10), async (req, res) => {
   }
 });
 
-// DELETE /api/photos/:id - remove metadata and storage file (if present)
-router.delete("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const docRef = firestore.collection("photos").doc(id);
-    const doc = await docRef.get();
-    if (!doc.exists) return res.status(404).json({ error: "not_found" });
-    const data = doc.data() as any;
-    // delete storage object if storagePath present
-    if (data && data.storagePath) {
-      try {
-        const file = storage.bucket().file(data.storagePath);
-        await file.delete();
-      } catch (err) {
-        // non-fatal: log and continue with metadata deletion
-        // eslint-disable-next-line no-console
-        console.warn("Failed to delete storage file", data.storagePath, (err as any).message || err);
-      }
-    }
-    await docRef.delete();
-    return res.json({ ok: true });
-  } catch (e: any) {
-    return res.status(500).json({ error: e.message || String(e) });
-  }
-});
-
 // PUT /api/photos/:id - update metadata
 router.put("/:id", async (req, res) => {
   try {
@@ -174,6 +128,31 @@ router.put("/:id", async (req, res) => {
     await firestore.collection("photos").doc(id).set(update, { merge: true });
     const doc = await firestore.collection("photos").doc(id).get();
     return res.json({ id: doc.id, ...doc.data() });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
+// DELETE /api/photos/:id - delete metadata and storage file (if present)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const docRef = firestore.collection("photos").doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: "not_found" });
+    const data = doc.data() as any;
+    if (data && data.storagePath) {
+      try {
+        const file = storage.bucket().file(data.storagePath);
+        await file.delete();
+      } catch (err) {
+        // log warning but continue to delete metadata
+        // eslint-disable-next-line no-console
+        console.warn("Failed to delete storage file", data.storagePath, (err as any).message || err);
+      }
+    }
+    await docRef.delete();
+    return res.json({ ok: true });
   } catch (e: any) {
     return res.status(500).json({ error: e.message || String(e) });
   }

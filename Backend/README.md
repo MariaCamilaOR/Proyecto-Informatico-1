@@ -66,3 +66,27 @@ Notes and next steps
    - GET /api/reports/patient/:id?from=YYYY-MM-DD&to=YYYY-MM-DD (requires auth)
  - The backend uses Firebase ID tokens to authenticate users; ensure the frontend sends Authorization header with `Bearer <token>` (frontend already does this).
  - Improve: signed upload URLs, create/modify photo documents on upload, role-based access checks, pagination, more endpoints (caregiver/patient management).
+
+Quick commands
+--------------
+
+Run the helper (Windows PowerShell):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap-credentials.ps1 -Start
+```
+
+Check credentials manually (Node script):
+
+```powershell
+cd Backend
+node ./scripts/check-creds.js
+```
+
+Bootstrap via npm (runs the helper):
+
+```powershell
+cd Backend
+npm run bootstrap
+```
+
