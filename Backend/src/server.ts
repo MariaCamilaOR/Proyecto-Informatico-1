@@ -6,7 +6,9 @@ import photosRouter from "./routes/photos";
 import reportsRouter from "./routes/reports";
 import { verifyTokenMiddleware } from "./middleware/expressAuth";
 
-dotenv.config();
+// Load .env.local first, then fall back to .env if .env.local doesn't exist
+dotenv.config({ path: "./.env.local" });
+dotenv.config(); // This will load .env if .env.local didn't exist
 
 const app = express();
 app.use(cors());

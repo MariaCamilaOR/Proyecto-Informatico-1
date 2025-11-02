@@ -118,26 +118,86 @@ DoURemember/
 
 ## 🔧 Variables de Entorno
 
+### Configuración Inicial
+
+1. **Copiar los archivos de ejemplo:**
+   ```bash
+   # Backend
+   cd Backend
+   cp .env.sample .env
+   
+   # Frontend
+   cd Frontend
+   cp .env.sample .env
+   ```
+
+2. **Editar los archivos `.env`** con tus valores reales (nunca commitees estos archivos).
+
 ### Backend (.env)
+
 ```env
-GOOGLE_APPLICATION_CREDENTIALS_JSON={...}
+# Firebase - Credenciales de servicio (JSON completo como string)
+# 1. Ve a Firebase Console > Project Settings > Service Accounts
+# 2. Genera una nueva clave privada
+# 3. Convierte el JSON completo a una cadena de una sola línea (sin saltos de línea)
+GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+
+# Firebase - Información del proyecto
 FIREBASE_PROJECT_ID=dyr-project
 FIREBASE_STORAGE_BUCKET=dyr-project.appspot.com
-ALLOWED_ORIGINS=http://localhost:5173
-SENTRY_DSN=
-STT_PROVIDER_API_KEY=
+
+# CORS - Orígenes permitidos (separados por coma si hay múltiples)
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Sentry - Monitoreo de errores (opcional)
+SENTRY_DSN=https://...
+
+# STT Provider - API Key para transcripción de voz (opcional)
+STT_PROVIDER_API_KEY=tu-api-key-aqui
 ```
 
+**⚠️ Importante:** 
+- En Vercel (producción), configura estas variables en el dashboard: Settings > Environment Variables
+- El archivo `.env` solo se usa para desarrollo local
+
 ### Frontend (.env)
+
 ```env
+# API Backend - URL base de la API
+# Desarrollo: http://localhost:3000/api
+# Producción: https://tu-backend.vercel.app/api
 VITE_API_BASE_URL=http://localhost:3000/api
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_APP_ID=
-VITE_SENTRY_DSN=
+
+# Firebase - Configuración del proyecto
+# Obtén estos valores desde Firebase Console > Project Settings > General > Your apps > Web app
+VITE_FIREBASE_API_KEY=tu-api-key
+VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=tu-proyecto-id
+VITE_FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+
+# Sentry - Monitoreo de errores (opcional)
+VITE_SENTRY_DSN=https://...
 ```
+
+**⚠️ Importante:** 
+- En Vite, todas las variables deben tener el prefijo `VITE_` para ser expuestas al cliente
+- El archivo `.env` solo se usa para desarrollo local
+- En producción (Firebase Hosting), configura estas variables en el dashboard de Firebase o durante el build
+
+### Seguridad
+
+✅ **Hacer:**
+- Mantener `.env` en `.gitignore` (ya configurado)
+- Usar `.env.sample` como plantilla para otros desarrolladores
+- Configurar variables en el dashboard de Vercel/Firebase para producción
+
+❌ **No hacer:**
+- Committear archivos `.env` al repositorio
+- Exponer API keys en el código fuente
+- Compartir credenciales por email o chat
 
 ## 🚀 Despliegue
 
