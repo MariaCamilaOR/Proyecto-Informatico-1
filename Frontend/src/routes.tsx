@@ -24,6 +24,9 @@ import AlertsSettings from "./pages/Alerts/Settings";
 import RemindersSettings from "./pages/Reminders/Settings";
 import CaregiversManage from "./pages/Caregivers/Manage";
 import CaregiversPatients from "./pages/Caregivers/Patients";
+import DoctorsPatients from "./pages/Doctors/Patients";
+import MyPatients from "./pages/Doctors/MyPatients";
+import PatientDetail from "./pages/Doctors/PatientDetail";
 
 export const appRoutes = (
   <>
@@ -226,6 +229,46 @@ export const appRoutes = (
         <ProtectedRoute>
           <RoleGuard allowed={["CAREGIVER"]}>
             <CaregiversPatients />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/doctors/patients"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <DoctorsPatients />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/doctors/mis-pacientes"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <MyPatients />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/doctors/patient/:id"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <PatientDetail />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/doctors/mis-pacientes"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <MyPatients />
           </RoleGuard>
         </ProtectedRoute>
       }
