@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import photosRouter from "./routes/photos";
 import reportsRouter from "./routes/reports";
 import usersRouter from "./routes/users";
+import descriptionsRouter from "./routes/descriptions";
+import patientsRouter from "./routes/patients";
 import { verifyTokenMiddleware } from "./middleware/expressAuth";
 
 // Load .env.local first, then fall back to .env if .env.local doesn't exist
@@ -22,6 +24,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 // Protected routes (verify token)
 app.use("/api/photos", verifyTokenMiddleware, photosRouter);
 app.use("/api/reports", verifyTokenMiddleware, reportsRouter);
+app.use("/api/descriptions", verifyTokenMiddleware, descriptionsRouter);
+app.use("/api/patients", verifyTokenMiddleware, patientsRouter);
 // Users route handles claim assignment for newly-registered users
 app.use("/api/users", usersRouter);
 

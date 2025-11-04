@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Flex, VStack, Card, CardBody, Alert, AlertIcon } from "@chakra-ui/react";
+import { Box, Heading, Text, Flex, VStack, Card, CardBody, Alert, AlertIcon, Select, FormControl, FormLabel } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
@@ -11,13 +11,14 @@ import { hasPermission } from "../../lib/roles";
 export default function PhotosUpload() {
   const { user } = useAuth();
   const [photos, setPhotos] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   const canUpload =
     !!user && (hasPermission(user.role, "upload_photos") || hasPermission(user.role, "upload_photos_for_patient"));
 
   const loadPhotos = async () => {
     try {
-      const patientId = user?.linkedPatientIds?.[0] || "demo-patient-123";
+      const patientId = selectedPatientId || user?.linkedPatientIds?.[0] || "demo-patient-123";
       const resp = await api.get(`/photos/patient/${patientId}`);
       setPhotos(resp.data || []);
     } catch (e) {
@@ -28,14 +29,14 @@ export default function PhotosUpload() {
   useEffect(() => {
     loadPhotos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [user?.uid, selectedPatientId]);
 
   const handlePhotoUpload = (files: File[]) => {
     const upload = async () => {
       try {
         const form = new FormData();
         files.forEach((f) => form.append("files", f));
-        const patientId = user?.linkedPatientIds?.[0] || "demo-patient-123";
+        const patientId = selectedPatientId || user?.linkedPatientIds?.[0] || "demo-patient-123";
         form.append("patientId", patientId);
 
         await api.post(`/photos/upload`, form);
@@ -79,6 +80,17 @@ export default function PhotosUpload() {
             <Card>
               <CardBody>
                 <VStack spacing={4}>
+                  {/* If caregiver, allow selecting which patient to upload for */}
+                  {user && String(user.role || "").toUpperCase() === "CAREGIVER" && (
+                    <FormControl>
+                      <FormLabel>Subir para paciente</FormLabel>
+                      <Select placeholder="Selecciona paciente" value={selectedPatientId || ''} onChange={(e) => setSelectedPatientId(e.target.value || null)}>
+                        {(user.linkedPatientIds || []).map((pid: string) => (
+                          <option key={pid} value={pid}>{pid}</option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
                   <PhotoUploader
                     onUpload={handlePhotoUpload}
                     maxFiles={10}

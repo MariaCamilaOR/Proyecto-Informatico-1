@@ -76,6 +76,25 @@ router.post("/upload", upload.array("files", 10), async (req, res) => {
     if (!files || files.length === 0) return res.status(400).json({ error: "no_files" });
     if (!patientId) return res.status(400).json({ error: "missing_patientId" });
 
+    // Authorization: only caregivers may upload photos
+    try {
+      const user = (req as any).user;
+      if (!user) return res.status(403).json({ error: "forbidden" });
+      const roleRaw = String(user.role || "");
+      const role = roleRaw.toUpperCase();
+      const linked: string[] = user.linkedPatientIds || [];
+      if (role !== "CAREGIVER") {
+        return res.status(403).json({ error: "forbidden_role" });
+      }
+      // caregivers may only upload for linked patients
+      if (!linked.includes(patientId)) return res.status(403).json({ error: "forbidden_patient" });
+    } catch (err) {
+      // if any check fails, deny for safety
+      // eslint-disable-next-line no-console
+      console.warn("Authorization check failed for photo upload", err);
+      return res.status(403).json({ error: "forbidden" });
+    }
+
     const bucket = storage.bucket();
     const created: any[] = [];
 

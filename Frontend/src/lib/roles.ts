@@ -49,7 +49,6 @@ export function labelForRole(role?: string | Role): string {
 export const ROLE_PERMISSIONS: Record<Role, readonly string[]> = {
   PATIENT: [
     "view_own_photos",
-    "upload_photos",
     "describe_photos",
     "view_own_reports",
     "manage_own_reminders",

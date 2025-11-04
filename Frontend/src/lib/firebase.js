@@ -2,25 +2,21 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
-
 // Evita inicializar más de una vez en hot-reload
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-
 export const auth = getAuth(app);
-
 // Use session persistence so multiple windows/tabs can have independent sessions.
 // This makes auth state scoped to the browser tab (sessionStorage) instead of shared localStorage.
 setPersistence(auth, browserSessionPersistence).catch((err) => {
-  // eslint-disable-next-line no-console
-  console.warn("Could not set auth persistence to session:", err?.message || err);
+    // eslint-disable-next-line no-console
+    console.warn("Could not set auth persistence to session:", err?.message || err);
 });
 export const db = getFirestore(app);
 export const storage = getStorage(app);

@@ -18,73 +18,36 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { FaEye, FaChartLine, FaCamera } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
+import { useToast } from "@chakra-ui/react";
 
 export default function CaregiversPatients() {
   const { user } = useAuth();
 
   const canViewPatients = user && hasPermission(user.role, "view_patient_reports");
 
-  // Datos demo según el rol
-  const linkedPatients = user?.role === "doctor" ? [
-    // Médicos ven todos los pacientes
-    {
-      id: "patient-1",
-      name: "María González",
-      email: "maria.gonzalez@ejemplo.com",
-      relationship: "Paciente",
-      status: "active",
-      lastActivity: "2023-10-22",
-      photosCount: 15,
-      sessionsCount: 8,
-      avgScore: 85,
-    },
-    {
-      id: "patient-2",
-      name: "Carlos Rodríguez",
-      email: "carlos.rodriguez@ejemplo.com",
-      relationship: "Paciente",
-      status: "active",
-      lastActivity: "2023-10-21",
-      photosCount: 22,
-      sessionsCount: 12,
-      avgScore: 78,
-    },
-    {
-      id: "patient-3",
-      name: "Ana Martínez",
-      email: "ana.martinez@ejemplo.com",
-      relationship: "Paciente",
-      status: "active",
-      lastActivity: "2023-10-20",
-      photosCount: 18,
-      sessionsCount: 10,
-      avgScore: 92,
-    },
-  ] : [
-    // Cuidadores ven solo sus pacientes vinculados
-    {
-      id: "patient-1",
-      name: "María González",
-      email: "maria.gonzalez@ejemplo.com",
-      relationship: "Madre",
-      status: "active",
-      lastActivity: "2023-10-22",
-      photosCount: 15,
-      sessionsCount: 8,
-      avgScore: 85,
-    },
-    {
-      id: "patient-2",
-      name: "Carlos Rodríguez",
-      email: "carlos.rodriguez@ejemplo.com",
-      relationship: "Padre",
-      status: "active",
-      lastActivity: "2023-10-21",
-      photosCount: 22,
-      sessionsCount: 12,
-      avgScore: 78,
-    },
-  ];
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  const loadPatients = async () => {
+    setLoading(true);
+    try {
+      const resp = await api.get(`/patients`);
+      setPatients(resp.data || []);
+    } catch (e) {
+      console.error("Failed to load patients", e);
+      toast({ title: "Error", description: "No se pudieron cargar los pacientes.", status: "error", duration: 4000 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (canViewPatients) loadPatients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   if (!canViewPatients) {
     return (
@@ -112,110 +75,76 @@ export default function CaregiversPatients() {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>
-                {user?.role === "doctor" ? "👩‍⚕️ Todos los Pacientes" : "👥 Mis Pacientes"}
+                {user?.role === "DOCTOR" ? "👩‍⚕️ Todos los Pacientes" : "👥 Mis Pacientes"}
               </Heading>
               <Text color="blue.600">
-                {user?.role === "doctor" 
+                {user?.role === "DOCTOR" 
                   ? "Pacientes bajo tu supervisión médica"
                   : "Pacientes vinculados a tu cuenta de cuidador"
                 }
               </Text>
             </Box>
 
-            {linkedPatients.length === 0 ? (
+            {patients.length === 0 ? (
               <Card>
                 <CardBody>
                   <Alert status="info">
                     <AlertIcon />
-                    {user?.role === "doctor" 
-                      ? "No hay pacientes registrados en el sistema aún."
-                      : "No tienes pacientes vinculados aún. Contacta a un paciente para que te invite."
-                    }
+                    {user?.role === "DOCTOR" 
+                        ? "No hay pacientes registrados en el sistema aún."
+                        : "No hay pacientes disponibles."
+                      }
                   </Alert>
                 </CardBody>
               </Card>
             ) : (
               <VStack spacing={4} align="stretch">
-                {linkedPatients.map((patient) => (
+                {patients.map((patient: any) => (
                   <Card key={patient.id}>
                     <CardBody>
                       <HStack justify="space-between" align="start">
                         <HStack spacing={4}>
                           <Avatar
-                            name={patient.name}
+                            name={patient.displayName || patient.id}
                             src={undefined}
                             size="lg"
                           />
                           <VStack align="start" spacing={1}>
-                            <Heading size="md">{patient.name}</Heading>
+                            <Heading size="md">{patient.displayName || patient.id}</Heading>
                             <Text color="blue.600" fontSize="sm">
-                              {patient.relationship} • {patient.email}
+                              {patient.email || "—"}
                             </Text>
                             <HStack spacing={4}>
-                              <Badge colorScheme="green">Activo</Badge>
-                              <Text fontSize="sm" color="blue.500">
-                                Última actividad: {patient.lastActivity}
-                              </Text>
+                              <Badge colorScheme={patient.assignedCaregiverId ? "gray" : "green"}>{patient.assignedCaregiverId ? "Asignado" : "Disponible"}</Badge>
                             </HStack>
                           </VStack>
                         </HStack>
 
                         <VStack spacing={2} align="end">
-                          <HStack spacing={4}>
-                            <VStack spacing={0}>
-                              <Text fontSize="sm" color="blue.500">Fotos</Text>
-                              <Text fontWeight="bold" color="blue.500">
-                                {patient.photosCount}
-                              </Text>
-                            </VStack>
-                            <VStack spacing={0}>
-                              <Text fontSize="sm" color="blue.500">Sesiones</Text>
-                              <Text fontWeight="bold" color="green.500">
-                                {patient.sessionsCount}
-                              </Text>
-                            </VStack>
-                            <VStack spacing={0}>
-                              <Text fontSize="sm" color="blue.500">Promedio</Text>
-                              <Text fontWeight="bold" color="purple.500">
-                                {patient.avgScore}%
-                              </Text>
-                            </VStack>
-                          </HStack>
-
                           <HStack spacing={2}>
-                            <Button
-                              leftIcon={<FaEye />}
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                // Navegar a ver perfil del paciente
-                                console.log("Ver perfil de:", patient.name);
-                              }}
-                            >
-                              Ver Perfil
-                            </Button>
-                            <Button
-                              leftIcon={<FaChartLine />}
-                              size="sm"
-                              colorScheme="blue"
-                              onClick={() => {
-                                // Navegar a reportes del paciente
-                                console.log("Ver reportes de:", patient.name);
-                              }}
-                            >
-                              Reportes
-                            </Button>
-                            <Button
-                              leftIcon={<FaCamera />}
-                              size="sm"
-                              colorScheme="green"
-                              onClick={() => {
-                                // Navegar a subir fotos para el paciente
-                                console.log("Subir fotos para:", patient.name);
-                              }}
-                            >
-                              Subir Fotos
-                            </Button>
+                            {/* view/profile/report buttons could be implemented later */}
+                            {patient.assignedCaregiverId ? (
+                              patient.assignedCaregiverId === user?.uid ? (
+                                <Button size="sm" colorScheme="gray" isDisabled>Asignado a ti</Button>
+                              ) : (
+                                <Button size="sm" colorScheme="gray" isDisabled>Asignado a otro</Button>
+                              )
+                            ) : (
+                              <Button size="sm" colorScheme="green" onClick={async () => {
+                                try {
+                                  await api.post(`/patients/${patient.id}/assign`);
+                                  toast({ title: "Asignado", description: "Te has asignado como cuidador.", status: "success", duration: 3000 });
+                                  await loadPatients();
+                                } catch (err: any) {
+                                  console.error("Assign failed", err);
+                                  if (err?.response?.status === 409) {
+                                    toast({ title: "No disponible", description: "El paciente ya está asignado.", status: "warning", duration: 4000 });
+                                  } else {
+                                    toast({ title: "Error", description: "No se pudo asignar al paciente.", status: "error", duration: 4000 });
+                                  }
+                                }
+                              }}>Asignarme</Button>
+                            )}
                           </HStack>
                         </VStack>
                       </HStack>
@@ -229,10 +158,10 @@ export default function CaregiversPatients() {
             <Box p={4} bg="green.50" borderRadius="md">
               <VStack spacing={3} align="start">
                 <Text fontWeight="bold">
-                  {user?.role === "doctor" ? "💡 Como médico puedes:" : "💡 Como cuidador puedes:"}
+                  {user?.role === "DOCTOR" ? "💡 Como médico puedes:" : "💡 Como cuidador puedes:"}
                 </Text>
                 <VStack align="start" spacing={1} fontSize="sm" color="blue.600">
-                  {user?.role === "doctor" ? (
+                  {user?.role === "DOCTOR" ? (
                     <>
                       <Text>• Ver el progreso y reportes de todos los pacientes</Text>
                       <Text>• Generar reportes detallados y análisis</Text>

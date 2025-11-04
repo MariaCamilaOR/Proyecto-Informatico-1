@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 import { getIdToken } from "./auth";
 
 export const api = axios.create({
@@ -7,7 +7,11 @@ export const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   const token = await getIdToken();
-  if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` };
+  if (token) {
+    const headers = AxiosHeaders.from(config.headers || {});
+    headers.set("Authorization", `Bearer ${token}`);
+    config.headers = headers;
+  }
   return config;
 });
 
@@ -17,7 +21,9 @@ api.interceptors.response.use(
     if (err?.response?.status === 401) {
       const token = await getIdToken();
       if (token) {
-        err.config.headers.Authorization = `Bearer ${token}`;
+        const headers = AxiosHeaders.from(err.config.headers || {});
+        headers.set("Authorization", `Bearer ${token}`);
+        err.config.headers = headers;
         return api.request(err.config);
       }
     }

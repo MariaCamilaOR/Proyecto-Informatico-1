@@ -18,6 +18,7 @@ export function Sidebar() {
     PATIENT: [
       ...base,
       { path: "/photos", label: "Fotos" },
+      { path: "/patient/gallery", label: "Galería" },
       { path: "/describe/wizard", label: "Describir" },
       { path: "/alerts", label: "Alertas" },
       { path: "/reminders", label: "Recordatorios" },
@@ -25,6 +26,7 @@ export function Sidebar() {
     CAREGIVER: [
       ...base,
       { path: "/photos", label: "Fotos" },
+      { path: "/cuidador/photos/upload", label: "Subir Fotos" },
       { path: "/caregivers/patients", label: "Mis Pacientes" },
       { path: "/caregivers/manage", label: "Gestionar Cuidadores" },
       { path: "/alerts", label: "Alertas" },

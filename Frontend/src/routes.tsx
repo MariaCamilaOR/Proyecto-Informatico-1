@@ -16,6 +16,7 @@ import PhotosTagger from "./pages/Photos/Tagger";
 import DescribeText from "./pages/Describe/Text";
 import DescribeVoice from "./pages/Describe/Voice";
 import DescribeWizard from "./pages/Describe/Wizard";
+import PatientGallery from "./pages/Photos/PatientGallery";
 import ReportsTrends from "./pages/Reports/Trends";
 import ReportsDetail from "./pages/Reports/Detail";
 import AlertsSettings from "./pages/Alerts/Settings";
@@ -51,11 +52,31 @@ export const appRoutes = (
       }
     />
     <Route
+      path="/patient/gallery"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["PATIENT"]}>
+            <PatientGallery />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/cuidador"
       element={
         <ProtectedRoute>
           <RoleGuard allowed={["CAREGIVER"]}>
             <Dashboard />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/cuidador/photos/upload"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["CAREGIVER"]}>
+            <PhotosUpload />
           </RoleGuard>
         </ProtectedRoute>
       }
@@ -82,16 +103,7 @@ export const appRoutes = (
         </ProtectedRoute>
       }
     />
-    <Route
-      path="/photos/upload"
-      element={
-        <ProtectedRoute>
-          <RoleGuard allowed={["PATIENT", "CAREGIVER"]}>
-            <PhotosUpload />
-          </RoleGuard>
-        </ProtectedRoute>
-      }
-    />
+    {/* upload is caregiver-only and lives under the caregiver portal path to avoid patient discovery */}
     <Route
       path="/photos/tagger"
       element={

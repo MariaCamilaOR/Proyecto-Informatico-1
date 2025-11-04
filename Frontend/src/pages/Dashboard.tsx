@@ -99,7 +99,7 @@ export default function Dashboard() {
                 <HStack spacing={3} wrap="wrap">
                   {role === "PATIENT" && (
                     <>
-                      <Button onClick={() => nav("/photos/upload")} colorScheme="blue">Subir fotos</Button>
+                      <Button onClick={() => nav("/patient/gallery")} colorScheme="teal">Ver Galería</Button>
                       <Button onClick={() => nav("/describe/wizard")} variant="outline">Describir (Wizard)</Button>
                       <Button onClick={() => nav("/reminders")} variant="ghost">Recordatorios</Button>
                     </>
@@ -107,6 +107,7 @@ export default function Dashboard() {
                   {role === "CAREGIVER" && (
                     <>
                       <Button onClick={() => nav("/photos")} colorScheme="blue">Fotos del paciente</Button>
+                      <Button onClick={() => nav("/cuidador/photos/upload")} colorScheme="blue">Subir fotos</Button>
                       <Button onClick={() => nav("/caregivers/patients")} variant="outline">Mis Pacientes</Button>
                       <Button onClick={() => nav("/alerts")} variant="ghost">Alertas</Button>
                     </>
