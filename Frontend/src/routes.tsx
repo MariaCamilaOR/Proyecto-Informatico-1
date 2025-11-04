@@ -17,6 +17,7 @@ import DescribeText from "./pages/Describe/Text";
 import DescribeVoice from "./pages/Describe/Voice";
 import DescribeWizard from "./pages/Describe/Wizard";
 import PatientGallery from "./pages/Photos/PatientGallery";
+import PatientCaretaker from "./pages/Patient/Caretaker";
 import ReportsTrends from "./pages/Reports/Trends";
 import ReportsDetail from "./pages/Reports/Detail";
 import AlertsSettings from "./pages/Alerts/Settings";
@@ -57,6 +58,16 @@ export const appRoutes = (
         <ProtectedRoute>
           <RoleGuard allowed={["PATIENT"]}>
             <PatientGallery />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/patient/caretaker"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["PATIENT"]}>
+            <PatientCaretaker />
           </RoleGuard>
         </ProtectedRoute>
       }

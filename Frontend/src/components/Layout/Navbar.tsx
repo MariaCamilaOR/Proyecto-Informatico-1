@@ -1,5 +1,7 @@
 // src/components/Layout/Navbar.tsx
-import { Box, Flex, Heading, Button, Spacer } from "@chakra-ui/react";
+import { Box, Flex, Heading, Button, Spacer, HStack, Text, IconButton, useToast } from "@chakra-ui/react";
+import { CopyIcon } from "@chakra-ui/icons";
+import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../../store/store";
@@ -32,6 +34,8 @@ export function Navbar() {
       <Flex align="center">
         <Heading size="md" color="blue.700">DoYouRemember</Heading>
         <Spacer />
+        {/* Show invite code for patients */}
+        <InviteCodeDisplay />
         <Button 
           variant="outline" 
           colorScheme="blue" 
@@ -48,5 +52,33 @@ export function Navbar() {
         </Button>
       </Flex>
     </Box>
+  );
+}
+
+function InviteCodeDisplay() {
+  const { user } = useAuth();
+  const toast = useToast();
+
+  if (!user) return null;
+  if (!user.role || user.role.toLowerCase() !== "patient") return null;
+  const code = user.inviteCode || user.uid;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code ?? "");
+      toast({ title: "Código copiado", status: "success", duration: 2000, isClosable: true });
+    } catch (e) {
+      toast({ title: "No se pudo copiar", status: "error", duration: 2000, isClosable: true });
+    }
+  };
+
+  return (
+    <HStack spacing={3} mr={4}>
+      <Text fontSize="sm" color="blue.600">Invitación:</Text>
+      <Box as="code" px={3} py={1} bg="blue.50" borderRadius="md" fontFamily="mono" color="blue.700" fontSize="sm">
+        {code}
+      </Box>
+      <IconButton aria-label="Copiar código" icon={<CopyIcon />} size="sm" onClick={handleCopy} />
+    </HStack>
   );
 }

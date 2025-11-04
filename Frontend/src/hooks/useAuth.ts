@@ -10,6 +10,7 @@ export type AppUser = {
   uid: string;
   email: string;
   role?: Role;
+  inviteCode?: string | null;
   linkedPatientIds: string[];
   displayName?: string;
   photoURL?: string;
@@ -84,10 +85,13 @@ export function useAuth(): AuthState {
           (snap.exists() && Array.isArray(snap.data()?.linkedPatientIds) && snap.data()?.linkedPatientIds) ||
           (role === ROLES.PATIENT ? [u.uid] : ["demo-patient-123"]);
 
+        const inviteCode = snap.exists() ? (snap.data()?.inviteCode ?? null) : null;
+
         const userObj: AppUser = {
           uid: u.uid,
           email: u.email ?? "",
           role,
+          inviteCode,
           linkedPatientIds: linked,
           displayName: u.displayName ?? undefined,
           photoURL: u.photoURL ?? undefined,

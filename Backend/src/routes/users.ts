@@ -1,6 +1,6 @@
 import { Router } from "express";
 import admin, { firestore } from "../firebaseAdmin";
-import { verifyTokenNoClaims } from "../middleware/expressAuth";
+import { verifyTokenNoClaims, verifyTokenMiddleware } from "../middleware/expressAuth";
 
 const router = Router();
 
@@ -17,17 +17,38 @@ router.post("/complete-registration", verifyTokenNoClaims, async (req, res) => {
     const patientId = body.patientId || uid;
     const role = body.role || "patient";
 
-    // Set custom claims on the user
-    await admin.auth().setCustomUserClaims(uid, { role, linkedPatientIds: [patientId] });
+  // Generate an invitation code for the patient if role is patient
+  const inviteCode = role === "patient" ? Math.random().toString(36).slice(2, 10).toUpperCase() : undefined;
 
-    // Update Firestore user doc with linkedPatientIds and role (merge)
-    await firestore.collection("users").doc(uid).set({ role, linkedPatientIds: [patientId] }, { merge: true });
+  // Set custom claims on the user
+  const claims: any = { role, linkedPatientIds: [patientId] };
+  await admin.auth().setCustomUserClaims(uid, claims);
+
+  // Update Firestore user doc with linkedPatientIds, role and inviteCode (if patient)
+  const updateObj: any = { role, linkedPatientIds: [patientId] };
+  if (inviteCode) updateObj.inviteCode = inviteCode;
+  await firestore.collection("users").doc(uid).set(updateObj, { merge: true });
 
     return res.json({ ok: true, uid, patientId });
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error("complete-registration failed:", err);
     return res.status(500).json({ error: err?.message || String(err) });
+  }
+});
+
+// GET /api/users/:id - get basic user info (protected)
+router.get("/:id", verifyTokenMiddleware, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const doc = await firestore.collection("users").doc(id).get();
+    if (!doc.exists) return res.status(404).json({ error: "user_not_found" });
+    const data = doc.data() as any;
+    return res.json({ id: doc.id, displayName: data.displayName || null, email: data.email || null, role: data.role || null, raw: data });
+  } catch (e: any) {
+    // eslint-disable-next-line no-console
+    console.error("Error getting user", e);
+    return res.status(500).json({ error: e?.message || String(e) });
   }
 });
 

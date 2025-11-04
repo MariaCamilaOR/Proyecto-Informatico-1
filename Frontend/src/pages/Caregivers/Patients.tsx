@@ -21,6 +21,7 @@ import { FaEye, FaChartLine, FaCamera } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useToast } from "@chakra-ui/react";
+import { Input, InputGroup, InputRightElement } from "@chakra-ui/react";
 
 export default function CaregiversPatients() {
   const { user } = useAuth();
@@ -28,13 +29,15 @@ export default function CaregiversPatients() {
   const canViewPatients = user && hasPermission(user.role, "view_patient_reports");
 
   const [patients, setPatients] = useState<any[]>([]);
+  const [linkedPatients, setLinkedPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const loadPatients = async () => {
+  const loadPatients = async (email?: string) => {
     setLoading(true);
     try {
-      const resp = await api.get(`/patients`);
+      const url = email ? `/patients?email=${encodeURIComponent(email)}` : `/patients`;
+      const resp = await api.get(url);
       setPatients(resp.data || []);
     } catch (e) {
       console.error("Failed to load patients", e);
@@ -44,8 +47,49 @@ export default function CaregiversPatients() {
     }
   };
 
+  const loadLinkedPatients = async () => {
+    if (!user) return;
+    try {
+      const ids = user.linkedPatientIds || [];
+      const list: any[] = [];
+      for (const id of ids) {
+        try {
+          const resp = await api.get(`/patients/${id}`);
+          list.push(resp.data);
+        } catch (err) {
+          // skip missing
+        }
+      }
+      setLinkedPatients(list);
+    } catch (e) {
+      console.error("Failed to load linked patients", e);
+    }
+  };
+
+  const [inviteCodeInput, setInviteCodeInput] = useState<string>("");
+
+  const onAddByCode = async () => {
+    const code = inviteCodeInput.trim();
+    if (!code) return toast({ title: "Ingrese un código", status: "warning", duration: 2000 });
+    try {
+      await api.post(`/patients/assign-by-code`, { code });
+      toast({ title: "Asignado", description: "Paciente agregado a tu lista.", status: "success", duration: 3000 });
+      setInviteCodeInput("");
+      await loadLinkedPatients();
+    } catch (err: any) {
+      console.error("Assign by code failed", err);
+      const status = err?.response?.status;
+      if (status === 404) toast({ title: "No encontrado", description: "Código inválido.", status: "error", duration: 4000 });
+      else if (status === 409) toast({ title: "No disponible", description: "El paciente ya está asignado a otro cuidador.", status: "warning", duration: 4000 });
+      else toast({ title: "Error", description: "No se pudo asignar por código.", status: "error", duration: 4000 });
+    }
+  };
+
   useEffect(() => {
-    if (canViewPatients) loadPatients();
+    if (canViewPatients) {
+      loadPatients();
+      loadLinkedPatients();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
@@ -85,21 +129,32 @@ export default function CaregiversPatients() {
               </Text>
             </Box>
 
-            {patients.length === 0 ? (
+            {/* paste invite code to add patient */}
+            <Box>
+              <InputGroup maxW="lg">
+                <Input placeholder="Pegar código de invitación..." value={inviteCodeInput} onChange={(e) => setInviteCodeInput(e.target.value)} />
+                <InputRightElement width="6.5rem">
+                  <Button h="1.75rem" size="sm" onClick={onAddByCode}>Agregar</Button>
+                </InputRightElement>
+              </InputGroup>
+            </Box>
+
+            {/* Show linked patients (those already assigned to this caregiver) */}
+            {linkedPatients.length === 0 ? (
               <Card>
                 <CardBody>
                   <Alert status="info">
                     <AlertIcon />
                     {user?.role === "DOCTOR" 
-                        ? "No hay pacientes registrados en el sistema aún."
-                        : "No hay pacientes disponibles."
+                        ? "No tienes pacientes enlazados aún."
+                        : "No tienes pacientes añadidos. Pega el código de invitación del paciente para añadirlo."
                       }
                   </Alert>
                 </CardBody>
               </Card>
             ) : (
               <VStack spacing={4} align="stretch">
-                {patients.map((patient: any) => (
+                {linkedPatients.map((patient: any) => (
                   <Card key={patient.id}>
                     <CardBody>
                       <HStack justify="space-between" align="start">
@@ -122,28 +177,19 @@ export default function CaregiversPatients() {
 
                         <VStack spacing={2} align="end">
                           <HStack spacing={2}>
-                            {/* view/profile/report buttons could be implemented later */}
-                            {patient.assignedCaregiverId ? (
-                              patient.assignedCaregiverId === user?.uid ? (
-                                <Button size="sm" colorScheme="gray" isDisabled>Asignado a ti</Button>
-                              ) : (
-                                <Button size="sm" colorScheme="gray" isDisabled>Asignado a otro</Button>
-                              )
-                            ) : (
-                              <Button size="sm" colorScheme="green" onClick={async () => {
+                            {patient.assignedCaregiverId === user?.uid ? (
+                              <Button size="sm" colorScheme="red" onClick={async () => {
                                 try {
-                                  await api.post(`/patients/${patient.id}/assign`);
-                                  toast({ title: "Asignado", description: "Te has asignado como cuidador.", status: "success", duration: 3000 });
-                                  await loadPatients();
+                                  await api.post(`/patients/${patient.id}/unassign`);
+                                  toast({ title: "Desasignado", description: "Ya no eres el cuidador de este paciente.", status: "success", duration: 3000 });
+                                  await loadLinkedPatients();
                                 } catch (err: any) {
-                                  console.error("Assign failed", err);
-                                  if (err?.response?.status === 409) {
-                                    toast({ title: "No disponible", description: "El paciente ya está asignado.", status: "warning", duration: 4000 });
-                                  } else {
-                                    toast({ title: "Error", description: "No se pudo asignar al paciente.", status: "error", duration: 4000 });
-                                  }
+                                  console.error("Unassign failed", err);
+                                  toast({ title: "Error", description: "No se pudo desasignar al paciente.", status: "error", duration: 4000 });
                                 }
-                              }}>Asignarme</Button>
+                              }}>Desasignarme</Button>
+                            ) : (
+                              <Button size="sm" colorScheme="gray" isDisabled>Asignado a otro</Button>
                             )}
                           </HStack>
                         </VStack>
