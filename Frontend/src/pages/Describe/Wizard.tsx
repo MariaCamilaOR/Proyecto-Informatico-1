@@ -100,7 +100,7 @@ export default function DescribeWizard() {
               <Heading color="whiteAlpha.900" mb={2}>
                 🧙‍♂️ Asistente de Descripción
               </Heading>
-              <Text color="gray.300">
+              <Text color="blue.600">
                 Te guiaremos paso a paso para describir tus fotos de manera detallada.
               </Text>
             </Box>
@@ -113,19 +113,19 @@ export default function DescribeWizard() {
                   </Text>
 
                   <VStack spacing={3} align="start" w="full">
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="blue.600">
                       <strong>Paso 1:</strong> Identifica las personas en la foto
                     </Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="blue.600">
                       <strong>Paso 2:</strong> Menciona los lugares donde fue tomada
                     </Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="blue.600">
                       <strong>Paso 3:</strong> Describe el evento o situación
                     </Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="blue.600">
                       <strong>Paso 4:</strong> Comparte tus emociones y recuerdos
                     </Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontSize="sm" color="blue.600">
                       <strong>Paso 5:</strong> Agrega detalles adicionales
                     </Text>
                   </VStack>
@@ -155,7 +155,7 @@ export default function DescribeWizard() {
                         objectFit="cover"
                         borderRadius="md"
                       />
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="blue.600">
                         Haz clic para describir esta foto
                       </Text>
                     </VStack>

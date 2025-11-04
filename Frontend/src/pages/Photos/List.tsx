@@ -87,7 +87,7 @@ export default function PhotosList() {
             <Flex justify="space-between" align="center">
               <Box>
                 <Heading mb={2}>📸 Galería de Fotos</Heading>
-                <Text color="gray.600">Tus fotos familiares y recuerdos importantes</Text>
+                <Text color="blue.600">Tus fotos familiares y recuerdos importantes</Text>
               </Box>
               <HStack spacing={3}>
                 <Button leftIcon={<FaFilter />} variant="outline" size="sm">Filtrar</Button>
@@ -119,7 +119,7 @@ export default function PhotosList() {
             {/* Vacio */}
             {photos.length === 0 && (
               <Box textAlign="center" py={8}>
-                <Text fontSize="lg" color="gray.500" mb={4}>
+                <Text fontSize="lg" color="blue.500" mb={4}>
                   No tienes fotos subidas aún
                 </Text>
                 {canEditPhotos && (

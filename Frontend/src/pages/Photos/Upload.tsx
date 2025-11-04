@@ -73,7 +73,7 @@ export default function PhotosUpload() {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>📸 Subir Fotos Familiares</Heading>
-              <Text color="gray.600">Sube fotos de familia, amigos y lugares importantes.</Text>
+              <Text color="blue.600">Sube fotos de familia, amigos y lugares importantes.</Text>
             </Box>
 
             <Card>

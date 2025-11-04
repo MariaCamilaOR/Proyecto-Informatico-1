@@ -9,8 +9,8 @@ export default function ReportsDetail() {
       <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
         <Box flex="1" p={{ base: 4, md: 6 }}>
-          <Heading mb={2} color="whiteAlpha.900">Detalle del Reporte</Heading>
-          <Text color="gray.300">TODO: Vista detallada de un reporte específico.</Text>
+          <Heading mb={2} color="blue.700">Detalle del Reporte</Heading>
+          <Text color="blue.600">TODO: Vista detallada de un reporte específico.</Text>
         </Box>
       </Flex>
     </Box>

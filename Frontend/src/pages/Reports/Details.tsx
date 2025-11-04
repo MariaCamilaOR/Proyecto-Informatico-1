@@ -66,8 +66,8 @@ export default function ReportsDetails() {
             {/* Header */}
             <Flex justify="space-between" align="center">
               <Box>
-                <Heading mb={2} color="whiteAlpha.900">📊 Detalles de Reportes</Heading>
-                <Text color="gray.300">Vista detallada con filtros avanzados</Text>
+                <Heading mb={2} color="blue.700">📊 Detalles de Reportes</Heading>
+                <Text color="blue.600">Vista detallada con filtros avanzados</Text>
               </Box>
 
               <ReportFilters
@@ -155,21 +155,21 @@ export default function ReportsDetails() {
 
                   {activeFilters ? (
                     <VStack spacing={2} w="full">
-                      <HStack justify="space-between" w="full" p={3} bg="gray.50" borderRadius="md">
+                      <HStack justify="space-between" w="full" p={3} bg="blue.50" borderRadius="md">
                         <Text fontWeight="bold">Sesión 1 - 15/01/2024</Text>
                         <HStack spacing={2}>
                           <Badge colorScheme="green">Recall: 85%</Badge>
                           <Badge colorScheme="purple">Coherencia: 90%</Badge>
                         </HStack>
                       </HStack>
-                      <HStack justify="space-between" w="full" p={3} bg="gray.50" borderRadius="md">
+                      <HStack justify="space-between" w="full" p={3} bg="blue.50" borderRadius="md">
                         <Text fontWeight="bold">Sesión 2 - 18/01/2024</Text>
                         <HStack spacing={2}>
                           <Badge colorScheme="green">Recall: 78%</Badge>
                           <Badge colorScheme="purple">Coherencia: 82%</Badge>
                         </HStack>
                       </HStack>
-                      <HStack justify="space-between" w="full" p={3} bg="gray.50" borderRadius="md">
+                      <HStack justify="space-between" w="full" p={3} bg="blue.50" borderRadius="md">
                         <Text fontWeight="bold">Sesión 3 - 22/01/2024</Text>
                         <HStack spacing={2}>
                           <Badge colorScheme="green">Recall: 92%</Badge>
@@ -179,7 +179,7 @@ export default function ReportsDetails() {
                     </VStack>
                   ) : (
                     <VStack spacing={3}>
-                      <Text color="gray.600">Aplica filtros para ver reportes específicos</Text>
+                      <Text color="blue.600">Aplica filtros para ver reportes específicos</Text>
                       <Alert status="info">
                         <AlertIcon />
                         <Text fontSize="sm">

@@ -36,7 +36,7 @@ export default function CaregiversManage() {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>👨‍👩‍👧‍👦 Gestión de Cuidadores</Heading>
-              <Text color="gray.600">
+              <Text color="blue.600">
                 Administra los cuidadores vinculados a tu cuenta de paciente
               </Text>
             </Box>
@@ -50,7 +50,7 @@ export default function CaregiversManage() {
             <Box p={4} bg="blue.50" borderRadius="md">
               <VStack spacing={3} align="start">
                 <Text fontWeight="bold">💡 Información sobre cuidadores:</Text>
-                <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
+                <VStack align="start" spacing={1} fontSize="sm" color="blue.600">
                   <Text>• Los cuidadores pueden ayudarte a subir fotos y ver tu progreso</Text>
                   <Text>• Puedes configurar qué permisos tiene cada cuidador</Text>
                   <Text>• Las invitaciones expiran después de 7 días</Text>

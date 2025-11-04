@@ -90,7 +90,7 @@ export default function PhotosTag() {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>🏷️ Etiquetar Fotos</Heading>
-              <Text color="gray.600">Organiza tus fotos agregando etiquetas y metadatos.</Text>
+              <Text color="blue.600">Organiza tus fotos agregando etiquetas y metadatos.</Text>
             </Box>
 
             <Card>
@@ -101,7 +101,7 @@ export default function PhotosTag() {
                   <Box
                     p={4}
                     border="2px dashed"
-                    borderColor="gray.300"
+                    borderColor="blue.300"
                     borderRadius="md"
                     cursor="pointer"
                     _hover={{ borderColor: "blue.400" }}
@@ -113,7 +113,7 @@ export default function PhotosTag() {
                         alt="Foto de ejemplo"
                         style={{ width: "100%", maxWidth: "320px", height: 150, objectFit: "cover", borderRadius: "8px" }}
                       />
-                      <Text fontSize="sm" color="gray.600">Haz clic para etiquetar esta foto</Text>
+                      <Text fontSize="sm" color="blue.600">Haz clic para etiquetar esta foto</Text>
                     </VStack>
                   </Box>
 

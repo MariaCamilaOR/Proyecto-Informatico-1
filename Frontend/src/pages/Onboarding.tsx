@@ -43,7 +43,7 @@ export default function Onboarding() {
 
               <VStack spacing={4} align="start">
                 <Heading size="md">Próximos pasos:</Heading>
-                <VStack align="start" spacing={2} fontSize="sm" color="gray.600">
+                <VStack align="start" spacing={2} fontSize="sm" color="blue.600">
                   <Text>• Sube más fotos familiares a tu galería</Text>
                   <Text>• Comienza a describir tus fotos usando el asistente</Text>
                   <Text>• Configura tus recordatorios en la sección de alertas</Text>

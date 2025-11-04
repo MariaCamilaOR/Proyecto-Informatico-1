@@ -94,7 +94,7 @@ export default function DescribeText() {
               <Heading color="whiteAlpha.900" mb={2}>
                 Describir por Texto
               </Heading>
-              <Text color="gray.300">
+              <Text color="blue.600">
                 Escribe una descripción detallada para una foto específica.
               </Text>
             </Box>

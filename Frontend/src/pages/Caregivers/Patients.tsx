@@ -114,7 +114,7 @@ export default function CaregiversPatients() {
               <Heading mb={2}>
                 {user?.role === "doctor" ? "👩‍⚕️ Todos los Pacientes" : "👥 Mis Pacientes"}
               </Heading>
-              <Text color="gray.600">
+              <Text color="blue.600">
                 {user?.role === "doctor" 
                   ? "Pacientes bajo tu supervisión médica"
                   : "Pacientes vinculados a tu cuenta de cuidador"
@@ -148,12 +148,12 @@ export default function CaregiversPatients() {
                           />
                           <VStack align="start" spacing={1}>
                             <Heading size="md">{patient.name}</Heading>
-                            <Text color="gray.600" fontSize="sm">
+                            <Text color="blue.600" fontSize="sm">
                               {patient.relationship} • {patient.email}
                             </Text>
                             <HStack spacing={4}>
                               <Badge colorScheme="green">Activo</Badge>
-                              <Text fontSize="sm" color="gray.500">
+                              <Text fontSize="sm" color="blue.500">
                                 Última actividad: {patient.lastActivity}
                               </Text>
                             </HStack>
@@ -163,19 +163,19 @@ export default function CaregiversPatients() {
                         <VStack spacing={2} align="end">
                           <HStack spacing={4}>
                             <VStack spacing={0}>
-                              <Text fontSize="sm" color="gray.500">Fotos</Text>
+                              <Text fontSize="sm" color="blue.500">Fotos</Text>
                               <Text fontWeight="bold" color="blue.500">
                                 {patient.photosCount}
                               </Text>
                             </VStack>
                             <VStack spacing={0}>
-                              <Text fontSize="sm" color="gray.500">Sesiones</Text>
+                              <Text fontSize="sm" color="blue.500">Sesiones</Text>
                               <Text fontWeight="bold" color="green.500">
                                 {patient.sessionsCount}
                               </Text>
                             </VStack>
                             <VStack spacing={0}>
-                              <Text fontSize="sm" color="gray.500">Promedio</Text>
+                              <Text fontSize="sm" color="blue.500">Promedio</Text>
                               <Text fontWeight="bold" color="purple.500">
                                 {patient.avgScore}%
                               </Text>
@@ -231,7 +231,7 @@ export default function CaregiversPatients() {
                 <Text fontWeight="bold">
                   {user?.role === "doctor" ? "💡 Como médico puedes:" : "💡 Como cuidador puedes:"}
                 </Text>
-                <VStack align="start" spacing={1} fontSize="sm" color="gray.600">
+                <VStack align="start" spacing={1} fontSize="sm" color="blue.600">
                   {user?.role === "doctor" ? (
                     <>
                       <Text>• Ver el progreso y reportes de todos los pacientes</Text>

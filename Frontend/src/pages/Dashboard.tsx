@@ -55,7 +55,7 @@ export default function Dashboard() {
           <VStack align="stretch" spacing={6}>
             <Box>
               <Heading mb={2}>Dashboard</Heading>
-              <Text color="gray.600">Bienvenido al prototipo de DoYouRemember</Text>
+              <Text color="blue.600">Bienvenido al prototipo de DoYouRemember</Text>
             </Box>
 
             {/* KPIs demo */}
@@ -67,7 +67,7 @@ export default function Dashboard() {
                     <Badge colorScheme="blue">Cuenta</Badge>
                   </HStack>
                   <Text fontSize="2xl" fontWeight="bold" color="blue.500">{photoCount === null ? '—' : photoCount}</Text>
-                  <Text fontSize="sm" color="gray.500">Última: {lastUploaded || 'Nunca'}</Text>
+                  <Text fontSize="sm" color="blue.500">Última: {lastUploaded || 'Nunca'}</Text>
                 </CardBody></Card>
               </GridItem>
               <GridItem>
@@ -77,7 +77,7 @@ export default function Dashboard() {
                     <Badge colorScheme="green">Demo</Badge>
                   </HStack>
                   <Text fontSize="2xl" fontWeight="bold" color="green.500">8</Text>
-                  <Text fontSize="sm" color="gray.500">Promedio: 85%</Text>
+                  <Text fontSize="sm" color="blue.500">Promedio: 85%</Text>
                 </CardBody></Card>
               </GridItem>
               <GridItem>
@@ -87,7 +87,7 @@ export default function Dashboard() {
                     <Badge colorScheme="purple">Demo</Badge>
                   </HStack>
                   <Text fontSize="2xl" fontWeight="bold" color="purple.500">3</Text>
-                  <Text fontSize="sm" color="gray.500">Último: ayer</Text>
+                  <Text fontSize="sm" color="blue.500">Último: ayer</Text>
                 </CardBody></Card>
               </GridItem>
             </Grid>

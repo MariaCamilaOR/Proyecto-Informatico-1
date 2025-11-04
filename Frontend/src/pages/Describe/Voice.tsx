@@ -69,7 +69,7 @@ export default function DescribeVoice() {
               <Heading color="whiteAlpha.900" mb={2}>
                 🎤 Describir por Voz
               </Heading>
-              <Text color="gray.300">
+              <Text color="blue.600">
                 Graba una descripción detallada de la foto seleccionada usando tu voz.
               </Text>
             </Box>
@@ -96,7 +96,7 @@ export default function DescribeVoice() {
                         objectFit="cover"
                         borderRadius="md"
                       />
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontSize="sm" color="blue.600">
                         Haz clic para seleccionar esta foto
                       </Text>
                     </VStack>
