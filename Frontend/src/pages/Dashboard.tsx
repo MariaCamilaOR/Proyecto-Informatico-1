@@ -113,7 +113,7 @@ export default function Dashboard() {
                   )}
                   {role === "DOCTOR" && (
                     <>
-                      <Button onClick={() => nav("/reports")} colorScheme="purple">Ver reportes</Button>
+                      <Button onClick={() => nav("/reports")} colorScheme="blue">Ver reportes</Button>
                       <Button onClick={() => nav("/alerts")} variant="outline">Políticas de alertas</Button>
                     </>
                   )}

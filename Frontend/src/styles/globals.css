@@ -119,42 +119,83 @@ input:focus, select:focus, textarea:focus{
   box-shadow: 0 0 0 3px var(--glow);
 }
 /* botones de formularios full width */
-.card form button{ width:100%; margin-top:10px; }
+.card form button{ 
+  width: 100%; 
+  margin-top: 10px;
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+.card form button:hover{
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+.card button{
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: white !important;
+}
+.card button:hover{
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
 
 /* ===== Buttons ===== */
 button{
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  border: none; 
-  color: white;
-  padding: 10px 20px; 
+  background: var(--primary) !important; /* Azul sólido por defecto */
+  border: 2px solid var(--primary) !important;
+  color: white !important;
+  padding: 12px 24px; 
   margin: 10px 5px;
   border-radius: 8px; 
   cursor: pointer;
   font-family: "Georgia", serif; 
   font-size: 15px;
-  font-weight: 500;
-  transition: all .18s ease;
+  font-weight: 600;
+  transition: all .2s ease;
   box-shadow: 0 2px 8px var(--shadow);
+  min-height: 44px; /* Asegurar altura mínima para visibilidad */
 }
 button:hover{ 
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary-acc) 100%);
+  background: var(--primary-hover) !important; /* Azul más oscuro al hover */
+  border-color: var(--primary-hover) !important;
+  color: white !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--glow);
+  box-shadow: 0 4px 16px var(--glow);
 }
 button:active{
   transform: translateY(0);
+  background: var(--primary-acc) !important; /* Azul muy oscuro al click */
+  border-color: var(--primary-acc) !important;
+}
+button:focus{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--glow), 0 2px 8px var(--shadow);
 }
 button:disabled{ 
-  opacity: .5; 
+  opacity: 0.6; 
   cursor: not-allowed;
-  background: var(--muted);
+  background: var(--muted) !important;
+  border-color: var(--muted) !important;
+  transform: none;
+  box-shadow: none;
 }
 button.google{ 
-  background: var(--google); 
+  background: var(--google) !important; 
+  border-color: var(--google) !important;
   width: 100%;
 }
+button.google:hover{
+  background: #c23321 !important; /* Rojo más oscuro para Google */
+  border-color: #c23321 !important;
+}
 button.logout{ 
-  background: var(--danger);
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
+button.logout:hover{
+  background: #b71c1c !important; /* Rojo más oscuro */
+  border-color: #b71c1c !important;
 }
 
 /* ===== Links & feedback ===== */

@@ -18,10 +18,55 @@ const theme = extendTheme({
   components: {
     Button: {
       baseStyle: {
-        fontWeight: 500,
+        fontWeight: 600,
+        borderRadius: "8px",
+        minHeight: "44px",
+        transition: "all 0.2s ease",
+      },
+      variants: {
+        solid: {
+          bg: "blue.500",
+          color: "white",
+          _hover: {
+            bg: "blue.600",
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 16px rgba(25, 118, 210, 0.2)",
+          },
+          _active: {
+            bg: "blue.700",
+            transform: "translateY(0)",
+          },
+          _focus: {
+            boxShadow: "0 0 0 3px rgba(25, 118, 210, 0.2)",
+          },
+        },
+        outline: {
+          borderColor: "blue.500",
+          color: "blue.600",
+          _hover: {
+            bg: "blue.50",
+            borderColor: "blue.600",
+            color: "blue.700",
+          },
+          _active: {
+            bg: "blue.100",
+            borderColor: "blue.700",
+          },
+        },
+        ghost: {
+          color: "blue.600",
+          _hover: {
+            bg: "blue.50",
+            color: "blue.700",
+          },
+          _active: {
+            bg: "blue.100",
+          },
+        },
       },
       defaultProps: {
         colorScheme: "blue",
+        variant: "solid",
       },
     },
     Card: {
