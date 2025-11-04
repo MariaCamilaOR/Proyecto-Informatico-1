@@ -6,6 +6,7 @@
   "scripts": {
   "dev": "ts-node-dev --respawn --transpile-only src/start.ts",
     "set-claims": "ts-node-dev --respawn --transpile-only src/scripts/setClaims.ts",
+  "set-claims-batch": "ts-node-dev --respawn --transpile-only src/scripts/set-claims-batch.ts",
     "bootstrap": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/bootstrap-credentials.ps1 -Start",
     "check-creds": "node ./scripts/check-creds.js",
     "build": "tsc -p .",

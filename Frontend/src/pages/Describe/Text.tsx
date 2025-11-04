@@ -70,9 +70,9 @@ export default function DescribeText() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Alert status="warning">
               <AlertIcon />
               No tienes permisos para describir fotos por texto con tu rol actual.
@@ -86,9 +86,9 @@ export default function DescribeText() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack align="stretch" spacing={6}>
             <Box>
               <Heading color="whiteAlpha.900" mb={2}>

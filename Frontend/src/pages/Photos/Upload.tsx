@@ -51,9 +51,9 @@ export default function PhotosUpload() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Alert status="warning">
               <AlertIcon />
               No tienes permisos para subir fotos con tu rol actual.
@@ -67,9 +67,9 @@ export default function PhotosUpload() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>📸 Subir Fotos Familiares</Heading>

@@ -20,9 +20,9 @@ export default function ReportsTrends() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Alert status="warning">
               <AlertIcon />
               No tienes permisos para ver reportes con tu rol actual.
@@ -39,9 +39,9 @@ export default function ReportsTrends() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2} color="whiteAlpha.900">📈 Tendencias y Progreso</Heading>

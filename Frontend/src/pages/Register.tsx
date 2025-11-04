@@ -32,7 +32,7 @@ export default function Register() {
 
   return (
     <div className="layout-content">
-      <div className="card" style={{ width: 420 }}>
+  <div className="card">
         <h2 style={{ textAlign: "center", color: "#58a6ff" }}>Crear una cuenta</h2>
 
         {/* Selector de rol: Paciente | Cuidador | Médico */}

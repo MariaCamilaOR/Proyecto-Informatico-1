@@ -1,6 +1,10 @@
 import admin from "firebase-admin";
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
+
+// Load env file (when running scripts like `set-claims` or dev tasks)
+dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 // Initialize Firebase Admin SDK using either a path to a service account
 // JSON file (SERVICE_ACCOUNT_KEY_PATH) or raw JSON in SERVICE_ACCOUNT_KEY_JSON.

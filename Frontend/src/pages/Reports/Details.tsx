@@ -43,9 +43,9 @@ export default function ReportsDetails() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Alert status="warning">
               <AlertIcon />
               No tienes permisos para ver reportes con tu rol actual.
@@ -59,9 +59,9 @@ export default function ReportsDetails() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             {/* Header */}
             <Flex justify="space-between" align="center">

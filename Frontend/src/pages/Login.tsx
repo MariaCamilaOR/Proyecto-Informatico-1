@@ -50,7 +50,7 @@ export default function Login() {
 
   return (
     <div className="layout-content">
-      <div className="card" style={{ width: 380 }}>
+  <div className="card">
         <h2 style={{ textAlign: "center", color: "var(--primary-acc)" }}>
           Iniciar sesión
         </h2>

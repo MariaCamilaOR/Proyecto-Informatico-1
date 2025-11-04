@@ -138,7 +138,7 @@ export function PhotoTagger({ photo, onSave, onCancel, canEdit = true }: PhotoTa
   }, {} as Record<string, PhotoTag[]>);
 
   return (
-    <VStack spacing={6} w="full" maxW="4xl" mx="auto">
+    <VStack spacing={6} w="full">
       {/* Header */}
       <Card w="full">
         <CardBody>

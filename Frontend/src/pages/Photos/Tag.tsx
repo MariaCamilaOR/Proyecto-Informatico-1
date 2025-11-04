@@ -54,9 +54,9 @@ export default function PhotosTag() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Alert status="warning">
               <AlertIcon />
               No tienes permisos para etiquetar fotos con tu rol actual.
@@ -71,9 +71,9 @@ export default function PhotosTag() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <PhotoTagger photo={selectedPhoto as any} onSave={handleSaveMetadata} onCancel={handleCancelTagging} canEdit />
           </Box>
         </Flex>
@@ -84,9 +84,9 @@ export default function PhotosTag() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>🏷️ Etiquetar Fotos</Heading>
@@ -111,7 +111,7 @@ export default function PhotosTag() {
                       <img
                         src="https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=Foto+para+Etiquetar"
                         alt="Foto de ejemplo"
-                        style={{ width: "200px", height: "150px", objectFit: "cover", borderRadius: "8px" }}
+                        style={{ width: "100%", maxWidth: "320px", height: 150, objectFit: "cover", borderRadius: "8px" }}
                       />
                       <Text fontSize="sm" color="gray.600">Haz clic para etiquetar esta foto</Text>
                     </VStack>

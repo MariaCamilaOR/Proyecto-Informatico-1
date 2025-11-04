@@ -339,7 +339,7 @@ export function DescriptionWizard({ photo, onComplete, onCancel }: DescriptionWi
   };
 
   return (
-    <VStack spacing={6} w="full" maxW="4xl" mx="auto">
+    <VStack spacing={6} w="full">
       {/* Header */}
       <Box textAlign="center" w="full">
         <Text fontSize="2xl" fontWeight="bold" color="whiteAlpha.900" mb={2}>

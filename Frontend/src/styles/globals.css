@@ -1,16 +1,17 @@
 :root{
-  --bg:#0d1117;
-  --bg2:#111827;
-  --card:#161b22;
-  --text:#f1f1f1;
-  --muted:#cbd5e1;
-  --border:#30363d;
-  --primary:#2563eb;       /* botones */
-  --primary-acc:#58a6ff;   /* títulos/enlaces */
-  --danger:#ef4444;
-  --google:#db4437;
-  --shadow:rgba(0,0,0,.4);
-  --glow:rgba(37,99,235,.4);
+  /* Light / Sky-blue palette */
+  --bg: #ffffff;            /* page background */
+  --bg2: #f6fbff;           /* slightly bluish surface */
+  --card: #f2f9ff;          /* card background */
+  --text: #0f1724;          /* primary text (dark) */
+  --muted: #6b7280;         /* muted text */
+  --border: #e6f0fb;        /* light border */
+  --primary: #0ea5e9;      /* light blue buttons */
+  --primary-acc: #0369a1;   /* accent / links */
+  --danger: #ef4444;
+  --google: #db4437;
+  --shadow: rgba(2,6,23,0.06);
+  --glow: rgba(14,165,233,0.12);
 }
 
 * { box-sizing: border-box; }
@@ -33,10 +34,9 @@ body{
   text-align: center;
   color: var(--primary-acc);
   font-family: "Georgia", serif;
-  border-bottom: 2px solid var(--primary);
+  border-bottom: 1px solid var(--border);
   font-size: 24px;
-  letter-spacing: .5px;
-  text-shadow: 0 0 10px rgba(37,99,235,.5);
+  letter-spacing: .2px;
 }
 .layout-content{ flex:1; display:flex; justify-content:center; align-items:center; padding:40px; }
 .layout-footer{
@@ -44,15 +44,17 @@ body{
   border-top:1px solid #1f2937;
 }
 
-/* ===== Card (auth, modales, etc.) ===== */
 .card{
   background: var(--card);
   border-radius: 10px;
   padding: 25px;
-  width: 380px;
-  box-shadow: 0 0 20px var(--shadow);
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  max-width: 920px;
+  width: 95%;
+  margin: 0 auto;
+  box-shadow: 0 6px 20px var(--shadow);
+  transition: transform .18s ease-in-out, box-shadow .18s ease-in-out;
 }
+/* ===== Card (auth, modales, etc.) ===== */
 .card:hover{ transform: translateY(-3px); box-shadow: 0 0 25px rgba(37,99,235,.3); }
 .card h2{
   text-align:center; font-family:"Georgia", serif; color:var(--primary-acc);
@@ -78,9 +80,9 @@ button{
   background: var(--primary);
   border:none; color:white;
   padding:10px 20px; margin:10px 5px;
-  border-radius:6px; cursor:pointer;
+  border-radius:8px; cursor:pointer;
   font-family:"Georgia", serif; font-size:15px;
-  transition: background .3s ease, transform .2s ease, opacity .2s ease;
+  transition: background .18s ease, transform .12s ease, opacity .12s ease;
 }
 button:hover{ opacity:.9; transform:translateY(-2px); }
 button:disabled{ opacity:.6; cursor:not-allowed; }
@@ -96,7 +98,7 @@ a:hover{ text-decoration:underline; }
 .divider{ height:1px; width:100%; background:rgba(255,255,255,.06); margin:10px 0; }
 
 /* ===== Portal toolbars / filtros ===== */
-.portal{ width: min(1024px, 95vw); margin: 0 auto; }
+.portal{ width: 95vw; max-width: 2000px; margin: 0 auto; }
 .portal-header{
   display:flex; align-items:center; justify-content:space-between;
   gap:12px; margin-bottom:16px;
@@ -154,8 +156,8 @@ a:hover{ text-decoration:underline; }
 }
 /* === Mejora de contraste de tipografías Chakra y headings === */
 :root {
-  --heading:#9cc1ff;     /* título principal más legible */
-  --subtle:#bcd3ff;      /* subtítulos/labels */
+  --heading:#034f84;     /* title color */
+  --subtle:#6b9fcf;      /* subtitles/labels */
 }
 
 /* Chakra headings en dark */
@@ -185,24 +187,43 @@ a:hover{ text-decoration:underline; }
   font-family: "Times New Roman", serif;
   padding: 10px 12px;
   border-radius: 8px;
-  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+  transition: background .12s ease, color .12s ease, box-shadow .12s ease;
   text-decoration: none;
 }
 
 .dyr-sidebar a:hover {
-  background: rgba(88,166,255,.08);
+  background: rgba(14,165,233,.06);
   color: var(--primary-acc);
-  box-shadow: 0 0 0 1px rgba(88,166,255,.25) inset;
+  box-shadow: 0 0 0 1px rgba(14,165,233,.08) inset;
 }
 
 .dyr-sidebar a.active {
-  background: rgba(37,99,235,.12);
+  background: rgba(14,165,233,.12);
   color: var(--primary-acc);
-  box-shadow: 0 0 0 1px rgba(37,99,235,.35) inset, 0 0 10px var(--glow);
+  box-shadow: 0 0 0 1px rgba(14,165,233,.12) inset, 0 0 14px var(--glow);
 }
 
 /* Tarjetas del dashboard con mejor legibilidad de títulos/chips */
 .chakra-card .chakra-heading {
   color: var(--subtle) !important;
+}
+
+/* Responsive adjustments for layout and sidebar */
+@media (max-width: 900px) {
+  /* Sidebar becomes a top horizontal block */
+  .dyr-sidebar {
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+  }
+  /* Portal becomes fluid on small screens but still constrained by max-width */
+  .portal { width: 96vw; max-width: 2000px; }
+}
+
+@media (max-width: 600px) {
+  /* Make sidebar links slightly more compact on narrow screens */
+  .dyr-sidebar a { padding: 8px 10px; font-size: 14px; }
 }
 

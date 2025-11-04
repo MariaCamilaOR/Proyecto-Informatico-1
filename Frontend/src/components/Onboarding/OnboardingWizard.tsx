@@ -405,7 +405,7 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
   };
 
   return (
-    <VStack spacing={6} w="full" maxW="4xl" mx="auto">
+  <VStack spacing={6} w="full">
       {/* Header */}
       <Box textAlign="center" w="full">
         <Text fontSize="2xl" fontWeight="bold" mb={2}>

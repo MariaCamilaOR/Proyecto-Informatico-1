@@ -66,9 +66,9 @@ export default function PhotosList() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <Text>No tienes permisos para ver fotos con tu rol actual.</Text>
           </Box>
         </Flex>
@@ -79,9 +79,9 @@ export default function PhotosList() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             {/* Header */}
             <Flex justify="space-between" align="center">

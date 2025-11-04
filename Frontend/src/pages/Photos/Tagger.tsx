@@ -6,9 +6,9 @@ export default function PhotosTagger() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <Heading mb={6}>Etiquetar Fotos</Heading>
           <Text>TODO: Herramienta de etiquetado</Text>
         </Box>

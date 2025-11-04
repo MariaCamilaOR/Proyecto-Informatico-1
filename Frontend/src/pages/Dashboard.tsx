@@ -4,18 +4,54 @@ import { Sidebar } from "../components/Layout/Sidebar";
 import { useAuth } from "../hooks/useAuth";
 import { normalizeRole } from "../lib/roles";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const role = normalizeRole(user?.role as any);
   const nav = useNavigate();
+  const [photoCount, setPhotoCount] = useState<number | null>(null);
+  const [lastUploaded, setLastUploaded] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+      const patientId = user.linkedPatientIds?.[0] || "demo-patient-123";
+      try {
+        const resp = await api.get(`/photos/patient/${patientId}`);
+        const items: any[] = resp.data || [];
+        setPhotoCount(items.length);
+        if (items.length > 0) {
+          // items returned with createdAt ISO strings — find latest
+          const dates = items.map((it) => (it.createdAt ? new Date(it.createdAt) : null)).filter(Boolean) as Date[];
+          if (dates.length > 0) {
+            const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
+            setLastUploaded(latest.toLocaleString());
+          } else {
+            setLastUploaded(null);
+          }
+        } else {
+          setLastUploaded(null);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load photos for dashboard", e);
+        setPhotoCount(null);
+        setLastUploaded(null);
+      }
+    };
+    load();
+    // reload when user changes
+  }, [user?.uid]);
 
   return (
     <Box>
       <Navbar />
-      <Flex>
+      {/* make layout responsive: column on small screens, row on medium+ */}
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack align="stretch" spacing={6}>
             <Box>
               <Heading mb={2}>Dashboard</Heading>
@@ -28,10 +64,10 @@ export default function Dashboard() {
                 <Card><CardBody>
                   <HStack justify="space-between" mb={2}>
                     <Heading size="sm">📸 Fotos Subidas</Heading>
-                    <Badge colorScheme="blue">Demo</Badge>
+                    <Badge colorScheme="blue">Cuenta</Badge>
                   </HStack>
-                  <Text fontSize="2xl" fontWeight="bold" color="blue.500">12</Text>
-                  <Text fontSize="sm" color="gray.500">Última: hace 2 días</Text>
+                  <Text fontSize="2xl" fontWeight="bold" color="blue.500">{photoCount === null ? '—' : photoCount}</Text>
+                  <Text fontSize="sm" color="gray.500">Última: {lastUploaded || 'Nunca'}</Text>
                 </CardBody></Card>
               </GridItem>
               <GridItem>

@@ -9,6 +9,7 @@ import {
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
+import { api } from '../../lib/api';
 import type { Role } from '../../lib/roles';
 
 const isIgnorablePopupError = (code?: string) =>
@@ -35,6 +36,15 @@ export const registerAuth = (
         role,
         createdAt: Date.now(),
       });
+
+      // Ask backend to assign custom claims for this new user so they can upload/view own resources
+      try {
+        await api.post('/users/complete-registration', { patientId: res.user.uid, role });
+      } catch (err) {
+        // non-fatal: log but continue. The admin can still set claims manually.
+        // eslint-disable-next-line no-console
+        console.warn('Failed to request claim assignment from backend:', (err as any)?.message || err);
+      }
 
       await signOut(auth);
     } catch (e: any) {
@@ -118,6 +128,15 @@ export const registerWithGoogle = (role: Role) => {
         role,
         createdAt: Date.now(),
       });
+
+      // Request backend to set custom claims for this new Google user
+      try {
+        await api.post('/users/complete-registration', { patientId: u.uid, role });
+      } catch (err) {
+        // non-fatal: log but continue
+        // eslint-disable-next-line no-console
+        console.warn('Failed to request claim assignment for google-registered user:', (err as any)?.message || err);
+      }
 
       await signOut(auth);
       alert('Registro con Google exitoso. Ahora puedes iniciar sesión.');

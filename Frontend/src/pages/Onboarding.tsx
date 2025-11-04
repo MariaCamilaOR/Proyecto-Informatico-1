@@ -27,9 +27,9 @@ export default function Onboarding() {
     return (
       <Box>
         <Navbar />
-        <Flex>
+        <Flex direction={{ base: "column", md: "row" }}>
           <Sidebar />
-          <Box flex="1" p={6}>
+          <Box flex="1" p={{ base: 4, md: 6 }}>
             <VStack spacing={6} align="stretch">
               <Alert status="success">
                 <AlertIcon />
@@ -60,9 +60,9 @@ export default function Onboarding() {
   return (
     <Box>
       <Navbar />
-      <Flex>
+      <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
-        <Box flex="1" p={6}>
+        <Box flex="1" p={{ base: 4, md: 6 }}>
           <OnboardingWizard onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />
         </Box>
       </Flex>
