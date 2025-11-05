@@ -96,12 +96,20 @@ async function attachQuizResultToReport(options: {
 }) {
   const { patientId, result, reportId } = options;
 
+  // Asegurarse de que submittedAt sea un Timestamp y no un FieldValue
+  const finalResult = {
+    ...result,
+    submittedAt: result.submittedAt instanceof admin.firestore.Timestamp 
+      ? result.submittedAt 
+      : admin.firestore.Timestamp.now()
+  };
+
   if (reportId) {
     const rref = firestore.collection("reports").doc(reportId);
     const rdoc = await rref.get();
     if (rdoc.exists && (rdoc.data() as any)?.patientId === patientId) {
       await rref.set(
-        { quizResults: admin.firestore.FieldValue.arrayUnion(result) },
+        { quizResults: admin.firestore.FieldValue.arrayUnion(finalResult) },
         { merge: true }
       );
       return;
@@ -115,7 +123,7 @@ async function attachQuizResultToReport(options: {
   if (arr.length > 0) {
     const lastRef = firestore.collection("reports").doc(arr[0].id);
     await lastRef.set(
-      { quizResults: admin.firestore.FieldValue.arrayUnion(result) },
+      { quizResults: admin.firestore.FieldValue.arrayUnion(finalResult) },
       { merge: true }
     );
     return;
@@ -127,7 +135,7 @@ async function attachQuizResultToReport(options: {
     baseline: null,
     createdBy: null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    quizResults: [result],
+    quizResults: [finalResult],
   });
 }
 /** ========================================= */
@@ -260,7 +268,7 @@ router.post("/:id/submit", async (req, res) => {
         quizId: ref.id,
         score,
         classification,
-        submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+        submittedAt: admin.firestore.Timestamp.now(), // Usar Timestamp.now() en lugar de FieldValue para arrays
       }
     });
 
