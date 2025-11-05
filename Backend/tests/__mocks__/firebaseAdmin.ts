@@ -38,6 +38,7 @@ export const mockFirestore = {
     arrayUnion: jest.fn((...items: any[]) => items),
     arrayRemove: jest.fn((...items: any[]) => items),
     delete: jest.fn(() => null),
+    serverTimestamp: jest.fn(() => new Date()),
   },
 };
 
@@ -56,9 +57,13 @@ export const mockAuth = {
   setCustomUserClaims: jest.fn(),
 };
 
+// Crear función firestore que retorna mockFirestore pero también tiene FieldValue
+const mockFirestoreFn = jest.fn(() => mockFirestore);
+(mockFirestoreFn as any).FieldValue = mockFirestore.FieldValue;
+
 const mockAdmin = {
   auth: jest.fn(() => mockAuth),
-  firestore: jest.fn(() => mockFirestore),
+  firestore: mockFirestoreFn,
   storage: jest.fn(() => mockStorage),
   credential: {
     cert: jest.fn(),
@@ -66,9 +71,6 @@ const mockAdmin = {
   initializeApp: jest.fn(),
   apps: [],
 };
-
-// Agregar FieldValue al admin para compatibilidad con admin.firestore.FieldValue
-(mockAdmin as any).firestore.FieldValue = mockFirestore.FieldValue;
 
 // Export default para compatibilidad
 export default mockAdmin;

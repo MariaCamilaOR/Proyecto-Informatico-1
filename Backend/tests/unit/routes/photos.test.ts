@@ -1,31 +1,30 @@
 import request from "supertest";
 import express, { Express } from "express";
 import photosRouter from "../../../src/routes/photos";
-import { verifyTokenMiddleware } from "../../../src/middleware/expressAuth";
 import { firestore, storage } from "../../../src/firebaseAdmin";
 
 // Mock de Firebase Admin
 jest.mock("../../../src/firebaseAdmin", () => require("../../__mocks__/firebaseAdmin"));
-// Mock del middleware (simplificado para tests de rutas)
-jest.mock("../../../src/middleware/expressAuth", () => ({
-  verifyTokenMiddleware: jest.fn((req, res, next) => {
-    // Simula usuario autenticado
-    (req as any).user = {
-      uid: "test-user-123",
-      role: "caregiver",
-      linkedPatientIds: ["patient-456"],
-    };
-    next();
-  }),
-}));
 
 describe("Photos Routes", () => {
   let app: Express;
+  let mockVerifyToken: jest.Mock;
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use("/api/photos", photosRouter);
+    
+    // Mock del middleware que se aplica en el servidor real
+    mockVerifyToken = jest.fn((req, res, next) => {
+      (req as any).user = {
+        uid: "test-user-123",
+        role: "caregiver",
+        linkedPatientIds: ["patient-456"],
+      };
+      next();
+    });
+    
+    app.use("/api/photos", mockVerifyToken, photosRouter);
     jest.clearAllMocks();
   });
 
@@ -159,7 +158,7 @@ describe("Photos Routes", () => {
       testApp.use(express.json());
       
       // Mock del middleware para simular usuario doctor (no puede subir fotos)
-      const mockVerifyToken = jest.fn((req, res, next) => {
+      const mockVerifyTokenDoctor = jest.fn((req, res, next) => {
         (req as any).user = {
           uid: "test-doctor-123",
           role: "doctor", // No es caregiver ni paciente
@@ -171,7 +170,7 @@ describe("Photos Routes", () => {
       // No necesitamos mockear Firestore porque el código no lo consulta para roles que no son caregiver
       // El else en la línea 114 debería capturar el rol "doctor" y retornar forbidden_role
       
-      testApp.use("/api/photos", mockVerifyToken, photosRouter);
+      testApp.use("/api/photos", mockVerifyTokenDoctor, photosRouter);
 
       const response = await request(testApp)
         .post("/api/photos/upload")
@@ -187,7 +186,7 @@ describe("Photos Routes", () => {
       const testApp = express();
       testApp.use(express.json());
       
-      const mockVerifyToken = jest.fn((req, res, next) => {
+      const mockVerifyTokenUnlinked = jest.fn((req, res, next) => {
         (req as any).user = {
           uid: "test-user-123",
           role: "caregiver",
@@ -209,7 +208,7 @@ describe("Photos Routes", () => {
         })),
       });
       
-      testApp.use("/api/photos", mockVerifyToken, photosRouter);
+      testApp.use("/api/photos", mockVerifyTokenUnlinked, photosRouter);
 
       const response = await request(testApp)
         .post("/api/photos/upload")
@@ -223,19 +222,28 @@ describe("Photos Routes", () => {
 
   describe("PUT /api/photos/:id", () => {
     it("debe actualizar metadata de foto", async () => {
-      const mockDoc = {
-        id: "photo-123",
-        data: () => ({
-          patientId: "patient-456",
-          url: "https://example.com/photo.jpg",
-        }),
+      const mockDocRef = {
+        get: jest.fn()
+          .mockResolvedValueOnce({
+            exists: true,
+            data: () => ({
+              patientId: "patient-456",
+              url: "https://example.com/photo.jpg",
+            }),
+          })
+          .mockResolvedValueOnce({
+            id: "photo-123",
+            data: () => ({
+              patientId: "patient-456",
+              url: "https://example.com/photo.jpg",
+              description: "Updated description",
+            }),
+          }),
+        set: jest.fn().mockResolvedValue(undefined),
       };
 
       (firestore.collection as jest.Mock).mockReturnValue({
-        doc: jest.fn((id: string) => ({
-          set: jest.fn().mockResolvedValue(undefined),
-          get: jest.fn().mockResolvedValue(mockDoc),
-        })),
+        doc: jest.fn((id: string) => mockDocRef),
       });
 
       const response = await request(app)
@@ -263,6 +271,7 @@ describe("Photos Routes", () => {
         get: jest.fn().mockResolvedValue({
           exists: true,
           data: () => ({
+            patientId: "patient-456", // Necesario para verificar permisos
             storagePath: "photos/patient-456/photo.jpg",
           }),
         }),

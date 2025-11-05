@@ -49,8 +49,15 @@ jest.mock("../firebaseAdmin", () => {
     }),
   }));
 
-  return {
-    firestore: { collection: mockCollection },
+  const mockFirestore = {
+    collection: mockCollection,
+    FieldValue: {
+      serverTimestamp: jest.fn(() => new Date()),
+    },
+  };
+
+  const mockAdmin = {
+    firestore: mockFirestore,
     storage: {
       bucket: jest.fn(() => ({
         file: jest.fn(() => ({
@@ -61,12 +68,29 @@ jest.mock("../firebaseAdmin", () => {
       })),
     },
   };
+
+  return {
+    ...mockAdmin,
+    default: mockAdmin,
+    firestore: mockFirestore,
+    storage: mockAdmin.storage,
+  };
 });
+
+// Mock del middleware de autenticación
+const mockVerifyToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (req as any).user = {
+    uid: "test-caregiver-123",
+    role: "caregiver",
+    linkedPatientIds: ["p001"],
+  };
+  next();
+};
 
 // Configura la app Express de prueba
 const app = express();
 app.use(express.json());
-app.use("/api/photos", photosRouter);
+app.use("/api/photos", mockVerifyToken, photosRouter);
 
 describe("📸 Photos API", () => {
   it("✅ GET /api/photos/patient/:id devuelve lista de fotos", async () => {
