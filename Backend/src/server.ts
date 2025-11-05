@@ -12,6 +12,7 @@ import notificationsRouter from "./routes/notifications";
 import patientsRouter from "./routes/patients";
 import { verifyTokenMiddleware, verifyTokenNoClaims } from "./middleware/expressAuth";
 import quizzesRouter from "./routes/quizzes";
+import consultorioRoutes from "./routes/consultorio";
 
 // Carga .env.local desde Backend (funciona en dev/dist)
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
