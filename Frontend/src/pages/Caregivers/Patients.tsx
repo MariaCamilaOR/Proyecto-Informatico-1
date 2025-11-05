@@ -38,7 +38,16 @@ export default function CaregiversPatients() {
     try {
       const url = email ? `/patients?email=${encodeURIComponent(email)}` : `/patients`;
       const resp = await api.get(url);
-      setPatients(resp.data || []);
+      // Defensive: exclude the current user if they somehow appear in the patients list
+      const all = resp.data || [];
+      // Defensive: only include items that look like patients. Backend already filters by role but be safe.
+      const filtered = all
+        .filter((p: any) => p && p.id && p.id !== user?.uid)
+        .filter((p: any) => {
+          const role = String(p?.raw?.role || "").toLowerCase();
+          return !role || role === "patient"; // allow if role missing for backward compat, otherwise require 'patient'
+        });
+      setPatients(filtered);
     } catch (e) {
       console.error("Failed to load patients", e);
       toast({ title: "Error", description: "No se pudieron cargar los pacientes.", status: "error", duration: 4000 });
@@ -55,12 +64,21 @@ export default function CaregiversPatients() {
       for (const id of ids) {
         try {
           const resp = await api.get(`/patients/${id}`);
-          list.push(resp.data);
+          // Defensive: ensure backend returned a patient role for this id
+          const pd = resp.data;
+          const roleRaw = String(pd?.raw?.role || "").toLowerCase();
+          if (!roleRaw || roleRaw === "patient") {
+            list.push(pd);
+          } else {
+            // skip non-patient roles
+          }
         } catch (err) {
           // skip missing
         }
       }
-      setLinkedPatients(list);
+      // Exclude the caregiver themself if for some reason their user id appears in the linked patients
+      const filtered = list.filter((p) => p && p.id && p.id !== user.uid);
+      setLinkedPatients(filtered);
     } catch (e) {
       console.error("Failed to load linked patients", e);
     }
@@ -119,13 +137,14 @@ export default function CaregiversPatients() {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>
-                {user?.role === "DOCTOR" ? "👩‍⚕️ Todos los Pacientes" : "👥 Mis Pacientes"}
+                {user?.role === "DOCTOR"
+                  ? "👩‍⚕️ Todos los Pacientes"
+                  : `👥 Pacientes bajo el cuidado de ${user?.displayName ?? "este cuidador"}`}
               </Heading>
               <Text color="blue.600">
-                {user?.role === "DOCTOR" 
+                {user?.role === "DOCTOR"
                   ? "Pacientes bajo tu supervisión médica"
-                  : "Pacientes vinculados a tu cuenta de cuidador"
-                }
+                  : `Lista de pacientes asignados a ${user?.displayName ?? "este cuidador"}.`}
               </Text>
             </Box>
 

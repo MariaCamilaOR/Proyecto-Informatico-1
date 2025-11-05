@@ -13,23 +13,32 @@ router.post("/complete-registration", verifyTokenNoClaims, async (req, res) => {
     if (!uid) return res.status(401).json({ error: "missing_uid" });
 
     const body = req.body || {};
-    // If client provides a patientId, use it; otherwise default to uid
-    const patientId = body.patientId || uid;
-    const role = body.role || "patient";
+    // Role defaults to 'patient' unless specified
+    const role = (body.role || "patient").toString();
 
-  // Generate an invitation code for the patient if role is patient
-  const inviteCode = role === "patient" ? Math.random().toString(36).slice(2, 10).toUpperCase() : undefined;
+    // For patients, default patientId to the user's uid unless client provided one.
+    // For non-patient roles (caregiver/doctor), do NOT add the user's own uid to linkedPatientIds by default.
+    let linkedPatientIds: string[] = [];
+    if (role.toLowerCase() === "patient") {
+      const patientId = (body.patientId || uid).toString();
+      linkedPatientIds = [patientId];
+    }
 
-  // Set custom claims on the user
-  const claims: any = { role, linkedPatientIds: [patientId] };
-  await admin.auth().setCustomUserClaims(uid, claims);
+    // Generate an invitation code for the patient if role is patient
+    const inviteCode = role.toLowerCase() === "patient" ? Math.random().toString(36).slice(2, 10).toUpperCase() : undefined;
 
-  // Update Firestore user doc with linkedPatientIds, role and inviteCode (if patient)
-  const updateObj: any = { role, linkedPatientIds: [patientId] };
-  if (inviteCode) updateObj.inviteCode = inviteCode;
-  await firestore.collection("users").doc(uid).set(updateObj, { merge: true });
+    // Set custom claims on the user (include linkedPatientIds only when applicable)
+    const claims: any = { role };
+    if (linkedPatientIds.length > 0) claims.linkedPatientIds = linkedPatientIds;
+    await admin.auth().setCustomUserClaims(uid, claims);
 
-    return res.json({ ok: true, uid, patientId });
+    // Update Firestore user doc with linkedPatientIds, role and inviteCode (if patient)
+    const updateObj: any = { role };
+    if (linkedPatientIds.length > 0) updateObj.linkedPatientIds = linkedPatientIds;
+    if (inviteCode) updateObj.inviteCode = inviteCode;
+    await firestore.collection("users").doc(uid).set(updateObj, { merge: true });
+
+  return res.json({ ok: true, uid, linkedPatientIds });
   } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error("complete-registration failed:", err);

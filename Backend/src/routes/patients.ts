@@ -54,6 +54,36 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /api/patients/caregiver/:id - list patients assigned to a caregiver
+router.get("/caregiver/:id", async (req, res) => {
+  try {
+    const caregiverId = req.params.id;
+    if (!caregiverId) return res.status(400).json({ error: "missing_caregiver_id" });
+
+    const roleVariants = ["patient", "PATIENT", "Patient"];
+    const snap = await firestore.collection("users").where("role", "in", roleVariants).where("assignedCaregiverId", "==", caregiverId).get();
+
+    const items: any[] = [];
+    snap.forEach((doc) => {
+      const data = doc.data() as any;
+      items.push({
+        id: doc.id,
+        displayName: data.displayName || null,
+        email: data.email || null,
+        assignedCaregiverId: data.assignedCaregiverId || null,
+        assignedDoctorId: data.assignedDoctorId || null,
+        raw: data,
+      });
+    });
+
+    return res.json(items);
+  } catch (e: any) {
+    // eslint-disable-next-line no-console
+    console.error("Error listing caregiver patients", e);
+    return res.status(500).json({ error: e?.message || String(e) });
+  }
+});
+
 // GET /api/patients/:id - get a single patient by id
 router.get("/:id", async (req, res) => {
   try {
@@ -61,6 +91,9 @@ router.get("/:id", async (req, res) => {
     const doc = await firestore.collection("users").doc(id).get();
     if (!doc.exists) return res.status(404).json({ error: "patient_not_found" });
     const data = doc.data() as any;
+    // Ensure the requested user actually has a patient role. If not, respond as not found.
+    const role = String(data.role || "").toLowerCase();
+    if (role !== "patient") return res.status(404).json({ error: "patient_not_found" });
     return res.json({
       id: doc.id,
       displayName: data.displayName || null,
