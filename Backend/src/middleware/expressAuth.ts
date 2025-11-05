@@ -10,7 +10,7 @@ export interface AuthedUser {
 }
 
 export async function verifyTokenMiddleware(req: Request, res: Response, next: NextFunction) {
-  // In local dev you can skip auth by setting SKIP_AUTH=true and providing demo values.
+  // Dev rápido
   if (process.env.SKIP_AUTH === "true") {
     const demoUid = process.env.DEMO_UID || "demo-user-123";
     const demoRole = (process.env.DEMO_ROLE as Role) || "patient";
@@ -25,14 +25,13 @@ export async function verifyTokenMiddleware(req: Request, res: Response, next: N
     if (!token) return res.status(401).json({ error: "missing_token" });
 
     const decoded = await auth.verifyIdToken(token, true);
-    // log the uid being verified for debugging
     // eslint-disable-next-line no-console
     console.log(`Verified token for uid=${decoded.uid}`);
 
-    let role = (decoded.role || decoded["role"]) as Role | undefined;
-    let linked = (decoded.linkedPatientIds || decoded["linkedPatientIds"]) as string[] | undefined;
+    let role = (decoded as any).role as Role | undefined;
+    let linked = (decoded as any).linkedPatientIds as string[] | undefined;
 
-    // If token doesn't include role/linked claims, try to read them from Firestore user profile as a fallback.
+    // Fallback: leer de Firestore si el token no trae claims
     if (!role || !linked) {
       try {
         const doc = await firestore.collection("users").doc(String(decoded.uid)).get();
@@ -42,31 +41,25 @@ export async function verifyTokenMiddleware(req: Request, res: Response, next: N
           if (Array.isArray(data.linkedPatientIds)) linked = data.linkedPatientIds;
         }
       } catch (err) {
-        // continue and let the later check fail
-        // eslint-disable-next-line no-console
         console.warn("Failed to read user profile for claims fallback", err);
       }
     }
 
-  // Require role; linkedPatientIds is optional and defaults to an empty array.
-  if (!role) return res.status(403).json({ error: "claims_missing_role" });
-  if (!linked) linked = [];
+    if (!role) return res.status(403).json({ error: "claims_missing_role" });
+    if (!linked) linked = [];
 
-  (req as any).user = { uid: decoded.uid, role, linkedPatientIds: linked } as AuthedUser;
+    (req as any).user = { uid: decoded.uid, role, linkedPatientIds: linked } as AuthedUser;
     return next();
   } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.error('Token verification error:', err);
-    const msg = err?.message || String(err);
-    // In dev provide error message for easier debugging. In production avoid leaking details.
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(401).json({ error: 'invalid_token' });
+    console.error("Token verification error:", err);
+    if (process.env.NODE_ENV === "production") {
+      return res.status(401).json({ error: "invalid_token" });
     }
-    return res.status(401).json({ error: 'invalid_token', message: msg });
+    return res.status(401).json({ error: "invalid_token", message: err?.message || String(err) });
   }
 }
- 
-// Verify ID token but do NOT require custom claims (used for registration completion)
+
+// Para endpoints que solo requieren un token válido (sin claims)
 export async function verifyTokenNoClaims(req: Request, res: Response, next: NextFunction) {
   if (process.env.SKIP_AUTH === "true") {
     const demoUid = process.env.DEMO_UID || "demo-user-123";
@@ -80,12 +73,10 @@ export async function verifyTokenNoClaims(req: Request, res: Response, next: Nex
     if (!token) return res.status(401).json({ error: "missing_token" });
 
     const decoded = await auth.verifyIdToken(token, true);
-    // attach minimal user info
     (req as any).user = { uid: decoded.uid } as AuthedUser;
     return next();
   } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.error('Token verification (no-claims) error:', err?.message || err);
-    return res.status(401).json({ error: 'invalid_token', message: err?.message || String(err) });
+    console.error("Token verification (no-claims) error:", err?.message || err);
+    return res.status(401).json({ error: "invalid_token", message: err?.message || String(err) });
   }
 }

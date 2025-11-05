@@ -1,90 +1,273 @@
 import React, { useEffect, useState } from "react";
-import { Box, Heading, Text, VStack, Card, CardBody, HStack, Button, Avatar, Input, InputGroup, InputRightElement, Grid } from "@chakra-ui/react";
+import { useParams } from "react-router-dom";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
-import { useAuth } from "../../hooks/useAuth";
+import {
+  Box,
+  Heading,
+  Text,
+  VStack,
+  Card,
+  CardBody,
+  HStack,
+  Avatar,
+  Button,
+  Checkbox,
+  Textarea,
+  useToast,
+  Divider,
+} from "@chakra-ui/react";
 import { api } from "../../lib/api";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@chakra-ui/react";
+import { useAuth } from "../../hooks/useAuth";
 
-export default function MyPatients() {
+// ---------- Helpers para mostrar frases humanas ----------
+type AnyRec = Record<string, any>;
+
+function safeParse(value: unknown): AnyRec {
+  if (typeof value === "string") {
+    try { return JSON.parse(value); } catch { return {}; }
+  }
+  return (value as AnyRec) || {};
+}
+
+function joinWithAnd(list: string[]): string {
+  if (list.length <= 1) return list.join("");
+  return `${list.slice(0, -1).join(", ")} y ${list[list.length - 1]}`;
+}
+
+function humanizeWizardData(raw: unknown): string {
+  const d = safeParse(raw);
+
+  const parts: string[] = [];
+
+  if (Array.isArray(d.people) && d.people.length) {
+    parts.push(`aparece(n) ${joinWithAnd(d.people.map(String))}`);
+  }
+  if (Array.isArray(d.places) && d.places.length) {
+    parts.push(`en ${joinWithAnd(d.places.map(String))}`);
+  }
+  if (d.events) {
+    parts.push(`durante ${String(d.events)}`);
+  }
+  if (d.emotions) {
+    parts.push(`con emociones de ${String(d.emotions)}`);
+  }
+  if (d.details) {
+    parts.push(String(d.details));
+  }
+
+  let sentence = parts.length
+    ? `En la foto ${parts.join(", ")}.`
+    : "Descripción sin detalles.";
+
+  if (Array.isArray(d.tags) && d.tags.length) {
+    sentence += ` Etiquetas: ${joinWithAnd(d.tags.map(String))}.`;
+  }
+  return sentence;
+}
+
+function formatDescription(item: AnyRec): string {
+  if (item?.type === "text") return String(item.description || "");
+  if (item?.type === "wizard") return humanizeWizardData(item.data);
+  // Fallback genérico
+  return item?.description ? String(item.description) : "";
+}
+// ---------------------------------------------------------
+
+export default function PatientDetail() {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const [patients, setPatients] = useState<any[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const toast = useToast();
-  const nav = useNavigate();
 
-  const loadMyPatients = async (q?: string) => {
-    setLoading(true);
+  const [patient, setPatient] = useState<any | null>(null);
+  const [descriptions, setDescriptions] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [baseline, setBaseline] = useState("");
+  const [message, setMessage] = useState("");
+  const toast = useToast();
+
+  const load = async () => {
+    if (!id) return;
     try {
-      const url = q ? `/patients?q=${encodeURIComponent(q)}` : `/patients`;
-      const resp = await api.get(url);
-      const all: any[] = resp.data || [];
-      const mine = all.filter((p) => p.assignedDoctorId === user?.uid);
-      setPatients(mine);
+      const p = await api.get(`/patients/${id}`);
+      setPatient(p.data);
     } catch (e) {
-      console.error("Failed to load my patients", e);
-      toast({ title: "Error", description: "No se pudieron cargar tus pacientes.", status: "error", duration: 4000 });
-    } finally {
-      setLoading(false);
+      console.error("Failed to load patient", e);
+    }
+    try {
+      const d = await api.get(`/descriptions/patient/${id}`);
+      setDescriptions(d.data || []);
+    } catch (e) {
+      console.error("Failed to load descriptions", e);
+    }
+    try {
+      const r = await api.get(`/reports/patient/${id}`);
+      setReports(r.data || []);
+    } catch (e) {
+      console.error("Failed to load reports", e);
     }
   };
 
-  useEffect(() => {
-    if (!user) return;
-    loadMyPatients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  useEffect(() => { load(); }, [id]);
+
+  const toggle = (descId: string) =>
+    setSelected((s) => ({ ...s, [descId]: !s[descId] }));
+
+  const handleCreateReport = async () => {
+    if (!id) return;
+
+    const selectedList = descriptions.filter((d) => selected[d.id]);
+    if (selectedList.length === 0 && !baseline) {
+      toast({
+        title: "Nada seleccionado",
+        description: "Selecciona al menos una descripción o escribe una línea base.",
+        status: "warning",
+      });
+      return;
+    }
+
+    try {
+      const payload = {
+        patientId: id,
+        data: { descriptions: selectedList, createdBy: user?.uid },
+        baseline,
+      };
+      await api.post(`/reports`, payload);
+      toast({ title: "Reporte creado", status: "success" });
+      const r = await api.get(`/reports/patient/${id}`);
+      setReports(r.data || []);
+    } catch (e) {
+      console.error("Failed to create report", e);
+      toast({ title: "Error", description: "No se pudo crear el reporte.", status: "error" });
+    }
+  };
+
+  const handleRequestBaseline = async () => {
+    if (!id) return;
+    try {
+      await api.post(`/notifications`, { patientId: id, type: "baseline_request", message });
+      toast({
+        title: "Solicitud enviada",
+        description: "Se solicitó al paciente que establezca una línea base.",
+        status: "success",
+      });
+      setMessage("");
+    } catch (e) {
+      console.error("Failed to send notification", e);
+      toast({ title: "Error", description: "No se pudo enviar la solicitud.", status: "error" });
+    }
+  };
 
   return (
     <Box>
       <Navbar />
-      <Grid templateColumns={{ base: "1fr" }}>
+      <HStack spacing={0} align="stretch">
         <Sidebar />
         <Box flex="1" p={{ base: 4, md: 6 }}>
-          <VStack spacing={6} align="stretch">
-            <Box>
-              <Heading>👨‍⚕️ Mis Pacientes</Heading>
-              <Text color="gray.600">Aquí verás los pacientes que tienes asignados. Puedes buscarlos por nombre o email.</Text>
-            </Box>
+          <VStack align="stretch" spacing={6}>
+            <Heading>Paciente: {patient?.displayName || patient?.email || id}</Heading>
 
-            <Box>
-              <InputGroup maxW="lg">
-                <Input placeholder="Buscar por nombre o email..." value={query} onChange={(e) => setQuery(e.target.value)} />
-                <InputRightElement width="6.5rem">
-                  <Button h="1.75rem" size="sm" onClick={async () => await loadMyPatients(query.trim() || undefined)}>Buscar</Button>
-                </InputRightElement>
-              </InputGroup>
-            </Box>
+            <Card>
+              <CardBody>
+                <Heading size="sm">Descripciones del paciente</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Selecciona las descripciones que quieras incluir en un reporte.
+                </Text>
 
-            <Box>
-              {patients.length === 0 ? (
-                <Text>No hay pacientes asignados.</Text>
-              ) : (
-                <VStack spacing={3} align="stretch">
-                  {patients.map((p) => (
-                    <Card key={p.id}><CardBody>
-                      <HStack justify="space-between">
-                        <HStack>
-                          <Avatar name={p.displayName || p.id} />
-                          <Box>
-                            <Text fontWeight="bold">{p.displayName || p.id}</Text>
-                            <Text fontSize="sm" color="blue.600">{p.email || '—'}</Text>
-                          </Box>
-                        </HStack>
-                        <HStack>
-                          <Button size="sm" colorScheme="blue" onClick={() => nav(`/doctors/patient/${p.id}`)}>Ver Descripciones</Button>
-                        </HStack>
-                      </HStack>
-                    </CardBody></Card>
-                  ))}
+                <VStack align="stretch" mt={3}>
+                  {descriptions.length === 0 ? (
+                    <Text>No hay descripciones.</Text>
+                  ) : (
+                    descriptions.map((d) => (
+                      <Card key={d.id}>
+                        <CardBody>
+                          <HStack align="start" justify="space-between">
+                            <HStack>
+                              <Avatar name={d.authorUid || "Paciente"} size="sm" />
+                              <Box>
+                                <Text fontWeight="bold">{d.type || "descripcion"}</Text>
+                                <Text fontSize="sm">{formatDescription(d)}</Text>
+                              </Box>
+                            </HStack>
+                            <Checkbox
+                              isChecked={!!selected[d.id]}
+                              onChange={() => toggle(d.id)}
+                            >
+                              Incluir
+                            </Checkbox>
+                          </HStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
                 </VStack>
-              )}
-            </Box>
+
+                <Divider my={4} />
+
+                <Heading size="sm">Crear Reporte</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Puedes incluir las descripciones seleccionadas y/o una línea base.
+                </Text>
+                <Textarea
+                  mt={2}
+                  placeholder="Línea base (opcional)"
+                  value={baseline}
+                  onChange={(e) => setBaseline(e.target.value)}
+                />
+                <HStack justify="flex-end" mt={3}>
+                  <Button colorScheme="green" onClick={handleCreateReport}>
+                    Crear Reporte
+                  </Button>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Heading size="sm">Solicitar Línea Base</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Envía una solicitud al paciente para que complete una línea base que puedas usar en futuros reportes.
+                </Text>
+                <Textarea
+                  mt={2}
+                  placeholder="Mensaje al paciente (opcional)"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <HStack justify="flex-end" mt={3}>
+                  <Button colorScheme="blue" onClick={handleRequestBaseline}>
+                    Solicitar Línea Base
+                  </Button>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Heading size="sm">Reportes previos</Heading>
+                {reports.length === 0 ? (
+                  <Text>No hay reportes.</Text>
+                ) : (
+                  <VStack align="stretch">
+                    {reports.map((r) => (
+                      <Card key={r.id}>
+                        <CardBody>
+                          <Text fontWeight="bold">
+                            {new Date(
+                              r.createdAt?.toDate ? r.createdAt.toDate() : r.createdAt
+                            ).toLocaleString()}
+                          </Text>
+                          <Text fontSize="sm">{JSON.stringify(r.data)}</Text>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </VStack>
+                )}
+              </CardBody>
+            </Card>
           </VStack>
         </Box>
-      </Grid>
+      </HStack>
     </Box>
   );
 }

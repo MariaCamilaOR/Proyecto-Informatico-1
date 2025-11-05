@@ -18,15 +18,27 @@ import DescribeVoice from "./pages/Describe/Voice";
 import DescribeWizard from "./pages/Describe/Wizard";
 import PatientGallery from "./pages/Photos/PatientGallery";
 import PatientCaretaker from "./pages/Patient/Caretaker";
+
 import ReportsTrends from "./pages/Reports/Trends";
 import ReportsDetail from "./pages/Reports/Detail";
+
 import AlertsSettings from "./pages/Alerts/Settings";
 import RemindersSettings from "./pages/Reminders/Settings";
+
 import CaregiversManage from "./pages/Caregivers/Manage";
 import CaregiversPatients from "./pages/Caregivers/Patients";
+
 import DoctorsPatients from "./pages/Doctors/Patients";
 import MyPatients from "./pages/Doctors/MyPatients";
 import PatientDetail from "./pages/Doctors/PatientDetail";
+/** ===== Quizzes ===== */
+// OJO: carpeta singular "Quiz"
+ // generar/administrar (doctor/caregiver)
+import QuizManage from "./pages/Doctors/QuizManage";
+// realizar (paciente)
+
+import QuizTake from "./pages/Quiz/Take";
+import PatientQuizResults from "./pages/Patient/QuizResults";
 
 export const appRoutes = (
   <>
@@ -34,7 +46,7 @@ export const appRoutes = (
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
 
-    {/* landing autenticada: decide portal por rol */}
+    {/* landing autenticada por rol */}
     <Route
       path="/"
       element={
@@ -44,7 +56,7 @@ export const appRoutes = (
       }
     />
 
-    {/* portales por rol (placeholder: Dashboard en los 3) */}
+    {/* portales por rol */}
     <Route
       path="/paciente"
       element={
@@ -106,7 +118,7 @@ export const appRoutes = (
       }
     />
 
-    {/* Módulos funcionales */}
+    {/* Fotos */}
     <Route
       path="/photos"
       element={
@@ -117,7 +129,6 @@ export const appRoutes = (
         </ProtectedRoute>
       }
     />
-    {/* upload is caregiver-only and lives under the caregiver portal path to avoid patient discovery */}
     <Route
       path="/photos/tagger"
       element={
@@ -129,7 +140,7 @@ export const appRoutes = (
       }
     />
 
-    {/* Describe: agrega índice para la base /describe */}
+    {/* Describe */}
     <Route
       path="/describe"
       element={
@@ -171,11 +182,12 @@ export const appRoutes = (
       }
     />
 
+    {/* Reports (incluye paciente) */}
     <Route
       path="/reports"
       element={
         <ProtectedRoute>
-          <RoleGuard allowed={["DOCTOR", "CAREGIVER"]}>
+          <RoleGuard allowed={["DOCTOR", "CAREGIVER", "PATIENT"]}>
             <ReportsTrends />
           </RoleGuard>
         </ProtectedRoute>
@@ -185,34 +197,46 @@ export const appRoutes = (
       path="/reports/:id"
       element={
         <ProtectedRoute>
-          <RoleGuard allowed={["DOCTOR", "CAREGIVER"]}>
+          <RoleGuard allowed={["DOCTOR", "CAREGIVER", "PATIENT"]}>
             <ReportsDetail />
           </RoleGuard>
         </ProtectedRoute>
       }
     />
 
+    {/* Quizzes */}
     <Route
-      path="/alerts"
+      path="/quiz/take/:id"
       element={
         <ProtectedRoute>
-          <RoleGuard allowed={["PATIENT", "CAREGIVER", "DOCTOR"]}>
-            <AlertsSettings />
+          <RoleGuard allowed={["PATIENT"]}>
+            <QuizTake />
           </RoleGuard>
         </ProtectedRoute>
       }
     />
     <Route
-      path="/reminders"
+      path="/quiz/results"
       element={
         <ProtectedRoute>
-          <RoleGuard allowed={["PATIENT", "CAREGIVER"]}>
-            <RemindersSettings />
+          <RoleGuard allowed={["PATIENT"]}>
+            <PatientQuizResults />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/quiz/manage/:patientId"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR", "CAREGIVER"]}>
+            <QuizManage />
           </RoleGuard>
         </ProtectedRoute>
       }
     />
 
+    {/* Gestión de cuidadores/médicos */}
     <Route
       path="/caregivers/manage"
       element={
@@ -263,12 +287,24 @@ export const appRoutes = (
         </ProtectedRoute>
       }
     />
+
+    {/* Ajustes */}
     <Route
-      path="/doctors/mis-pacientes"
+      path="/alerts"
       element={
         <ProtectedRoute>
-          <RoleGuard allowed={["DOCTOR"]}>
-            <MyPatients />
+          <RoleGuard allowed={["PATIENT", "CAREGIVER", "DOCTOR"]}>
+            <AlertsSettings />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/reminders"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["PATIENT", "CAREGIVER"]}>
+            <RemindersSettings />
           </RoleGuard>
         </ProtectedRoute>
       }

@@ -1,9 +1,14 @@
-import { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box, VStack, HStack, Text, Card, CardBody, Badge, Progress, Grid, GridItem,
   Button, Select, Stat, StatLabel, StatNumber, StatHelpText, StatArrow,
+  Spinner, Alert, AlertIcon,
 } from "@chakra-ui/react";
 import { FaChartLine, FaCalendarAlt, FaUser, FaBrain, FaEye } from "react-icons/fa";
+import { useAuth } from "../../hooks/useAuth";
+import { getReportSummary } from "../../hooks/useReports";
+
+type Trend = "up" | "down" | "stable";
 
 interface ReportData {
   patientId: string;
@@ -11,16 +16,17 @@ interface ReportData {
   period: string;
   baselineScore: number;
   currentScore: number;
-  trend: "up" | "down" | "stable";
+  trend: Trend;
   sessionsCompleted: number;
   photosDescribed: number;
   averageRecall: number;
   averageCoherence: number;
-  lastSession: string;
+  lastSession: string | number | Date;
   recommendations: string[];
 }
 
 interface SimpleReportProps {
+  patientId?: string;
   reportData?: ReportData;
   onExportPDF?: () => void;
   onShareWithDoctor?: () => void;
@@ -28,49 +34,82 @@ interface SimpleReportProps {
   canShare?: boolean;
 }
 
+const getTrendColor = (trend: Trend) =>
+  trend === "up" ? "green" : trend === "down" ? "red" : "blue";
+
+const getScoreColor = (score: number) =>
+  score >= 80 ? "green" : score >= 60 ? "yellow" : "red";
+
+const getScoreLabel = (score: number) =>
+  score >= 80 ? "Excelente" : score >= 60 ? "Bueno" : score >= 40 ? "Regular" : "Necesita atención";
+
 export function SimpleReport({
+  patientId,
   reportData,
   onExportPDF,
   onShareWithDoctor,
   canExport = false,
   canShare = false,
 }: SimpleReportProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
+  const { user } = useAuth();
+  const [selectedPeriod, setSelectedPeriod] = useState<"7d" | "30d" | "90d">("30d");
 
-  const getTrendColor = (trend: "up" | "down" | "stable") =>
-    trend === "up" ? "green" : trend === "down" ? "red" : "blue";
+  const effectivePatientId = useMemo(() => {
+    if (patientId) return patientId;
+    if (!user) return undefined as unknown as string;
+    const role = String(user.role || "").toUpperCase();
+    if (role === "PATIENT") return user.uid;
+    if (Array.isArray(user.linkedPatientIds) && user.linkedPatientIds.length > 0) {
+      return user.linkedPatientIds[0];
+    }
+    return undefined as unknown as string;
+  }, [patientId, user]);
 
-  const getTrendIcon = (trend: "up" | "down" | "stable") =>
-    trend === "up" ? <StatArrow type="increase" /> :
-    trend === "down" ? <StatArrow type="decrease" /> :
-    <StatArrow type="increase" />;
+  const [summary, setSummary] = useState<ReportData | null>(reportData ?? null);
+  const [loading, setLoading] = useState<boolean>(!reportData);
+  const [error, setError] = useState<string | null>(null);
 
-  const getScoreColor = (score: number) => (score >= 80 ? "green" : score >= 60 ? "yellow" : "red");
+  useEffect(() => {
+    if (reportData) {
+      setSummary(reportData);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    if (!effectivePatientId) return;
 
-  const getScoreLabel = (score: number) =>
-    score >= 80 ? "Excelente" : score >= 60 ? "Bueno" : score >= 40 ? "Regular" : "Necesita atención";
+    const days = selectedPeriod === "7d" ? 7 : selectedPeriod === "90d" ? 90 : 30;
+    setLoading(true);
+    getReportSummary(effectivePatientId, days)
+      .then((res) => { setSummary(res as ReportData); setError(null); })
+      .catch((e) => setError(e?.message || "Error cargando resumen"))
+      .finally(() => setLoading(false));
+  }, [reportData, effectivePatientId, selectedPeriod]);
 
-  // Demo si no llega data
-  const demoData: ReportData = {
-    patientId: "demo-patient-123",
-    patientName: "María González",
-    period: "Últimos 30 días",
-    baselineScore: 75,
-    currentScore: 82,
-    trend: "up",
-    sessionsCompleted: 8,
-    photosDescribed: 12,
-    averageRecall: 78,
-    averageCoherence: 85,
-    lastSession: "2024-01-20",
-    recommendations: [
-      "Continuar con las sesiones regulares",
-      "Mantener la rutina de descripción de fotos",
-      "Considerar aumentar la frecuencia a 3 veces por semana",
-    ],
-  };
+  if (!reportData && loading) {
+    return (
+      <Card w="full">
+        <CardBody>
+          <HStack><Spinner /><Text>Cargando resumen…</Text></HStack>
+        </CardBody>
+      </Card>
+    );
+  }
 
-  const data = reportData ?? demoData;
+  if (!summary || error) {
+    return (
+      <Card w="full">
+        <CardBody>
+          <Alert status="warning">
+            <AlertIcon />
+            No se pudo obtener el resumen de reportes. Verifica que existan reportes/quiz para este paciente.
+          </Alert>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const d = summary;
 
   return (
     <VStack spacing={6} w="full">
@@ -81,13 +120,13 @@ export function SimpleReport({
             <HStack justify="space-between" w="full">
               <VStack align="start" spacing={1}>
                 <Text fontSize="2xl" fontWeight="bold" color="whiteAlpha.900">📊 Reporte de Progreso</Text>
-                <Text color="gray.400">{data.patientName} • {data.period}</Text>
+                <Text color="gray.400">{d.patientName} • {d.period}</Text>
               </VStack>
 
               <VStack spacing={2}>
                 <Select
                   value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  onChange={(e) => setSelectedPeriod(e.target.value as any)}
                   size="sm"
                 >
                   <option value="7d">Últimos 7 días</option>
@@ -97,12 +136,14 @@ export function SimpleReport({
 
                 <HStack spacing={2}>
                   {canExport && (
-                    <Button size="sm" colorScheme="blue" variant="outline" onClick={onExportPDF}>
+                    <Button size="sm" colorScheme="blue" variant="outline"
+                      onClick={onExportPDF || (() => window.print())}>
                       📄 Exportar PDF
                     </Button>
                   )}
                   {canShare && (
-                    <Button size="sm" colorScheme="green" variant="outline" onClick={onShareWithDoctor}>
+                    <Button size="sm" colorScheme="green" variant="outline"
+                      onClick={onShareWithDoctor}>
                       👩‍⚕️ Compartir con médico
                     </Button>
                   )}
@@ -119,8 +160,11 @@ export function SimpleReport({
           <Card><CardBody>
             <Stat>
               <StatLabel>Puntuación Actual</StatLabel>
-              <StatNumber color={`${getScoreColor(data.currentScore)}.500`}>{data.currentScore}%</StatNumber>
-              <StatHelpText>{getTrendIcon(data.trend)}{data.trend === "up" ? "Mejorando" : data.trend === "down" ? "Disminuyendo" : "Estable"}</StatHelpText>
+              <StatNumber color={`${getScoreColor(d.currentScore)}.500`}>{d.currentScore}%</StatNumber>
+              <StatHelpText>
+                <StatArrow type={d.trend === "down" ? "decrease" : "increase"} />
+                {d.trend === "up" ? "Mejorando" : d.trend === "down" ? "Disminuyendo" : "Estable"}
+              </StatHelpText>
             </Stat>
           </CardBody></Card>
         </GridItem>
@@ -129,8 +173,8 @@ export function SimpleReport({
           <Card><CardBody>
             <Stat>
               <StatLabel>Sesiones Completadas</StatLabel>
-              <StatNumber color="blue.500">{data.sessionsCompleted}</StatNumber>
-              <StatHelpText><FaCalendarAlt /> {data.period}</StatHelpText>
+              <StatNumber color="blue.500">{d.sessionsCompleted}</StatNumber>
+              <StatHelpText><FaCalendarAlt /> {d.period}</StatHelpText>
             </Stat>
           </CardBody></Card>
         </GridItem>
@@ -139,7 +183,7 @@ export function SimpleReport({
           <Card><CardBody>
             <Stat>
               <StatLabel>Fotos Descritas</StatLabel>
-              <StatNumber color="purple.500">{data.photosDescribed}</StatNumber>
+              <StatNumber color="purple.500">{d.photosDescribed}</StatNumber>
               <StatHelpText><FaEye /> Total acumulado</StatHelpText>
             </Stat>
           </CardBody></Card>
@@ -149,7 +193,7 @@ export function SimpleReport({
           <Card><CardBody>
             <Stat>
               <StatLabel>Línea Base</StatLabel>
-              <StatNumber color="gray.500">{data.baselineScore}%</StatNumber>
+              <StatNumber color="gray.500">{d.baselineScore}%</StatNumber>
               <StatHelpText>Puntuación inicial</StatHelpText>
             </Stat>
           </CardBody></Card>
@@ -165,10 +209,10 @@ export function SimpleReport({
               <VStack spacing={2} w="full">
                 <HStack justify="space-between" w="full">
                   <Text fontSize="sm">Promedio actual</Text>
-                  <Badge colorScheme={getScoreColor(data.averageRecall)}>{data.averageRecall}%</Badge>
+                  <Badge colorScheme={getScoreColor(d.averageRecall)}>{d.averageRecall}%</Badge>
                 </HStack>
-                <Progress value={data.averageRecall} w="full" colorScheme={getScoreColor(data.averageRecall)} size="lg" />
-                <Text fontSize="xs" color="gray.500">{getScoreLabel(data.averageRecall)}</Text>
+                <Progress value={d.averageRecall} w="full" colorScheme={getScoreColor(d.averageRecall)} size="lg" />
+                <Text fontSize="xs" color="gray.500">{getScoreLabel(d.averageRecall)}</Text>
               </VStack>
             </VStack>
           </CardBody></Card>
@@ -181,10 +225,10 @@ export function SimpleReport({
               <VStack spacing={2} w="full">
                 <HStack justify="space-between" w="full">
                   <Text fontSize="sm">Promedio actual</Text>
-                  <Badge colorScheme={getScoreColor(data.averageCoherence)}>{data.averageCoherence}%</Badge>
+                  <Badge colorScheme={getScoreColor(d.averageCoherence)}>{d.averageCoherence}%</Badge>
                 </HStack>
-                <Progress value={data.averageCoherence} w="full" colorScheme={getScoreColor(data.averageCoherence)} size="lg" />
-                <Text fontSize="xs" color="gray.500">{getScoreLabel(data.averageCoherence)}</Text>
+                <Progress value={d.averageCoherence} w="full" colorScheme={getScoreColor(d.averageCoherence)} size="lg" />
+                <Text fontSize="xs" color="gray.500">{getScoreLabel(d.averageCoherence)}</Text>
               </VStack>
             </VStack>
           </CardBody></Card>
@@ -199,18 +243,18 @@ export function SimpleReport({
             <Grid templateColumns="repeat(3, 1fr)" gap={4} w="full">
               <Box textAlign="center">
                 <Text fontSize="sm" color="gray.600">Línea Base</Text>
-                <Text fontSize="2xl" fontWeight="bold" color="gray.500">{data.baselineScore}%</Text>
+                <Text fontSize="2xl" fontWeight="bold" color="gray.500">{d.baselineScore}%</Text>
               </Box>
               <Box textAlign="center">
                 <Text fontSize="sm" color="gray.600">Actual</Text>
-                <Text fontSize="2xl" fontWeight="bold" color={`${getScoreColor(data.currentScore)}.500`}>
-                  {data.currentScore}%
+                <Text fontSize="2xl" fontWeight="bold" color={`${getScoreColor(d.currentScore)}.500`}>
+                  {d.currentScore}%
                 </Text>
               </Box>
               <Box textAlign="center">
                 <Text fontSize="sm" color="gray.600">Diferencia</Text>
-                <Text fontSize="2xl" fontWeight="bold" color={getTrendColor(data.trend)}>
-                  {data.trend === "up" ? "+" : data.trend === "down" ? "-" : ""}{Math.abs(data.currentScore - data.baselineScore)}%
+                <Text fontSize="2xl" fontWeight="bold" color={getTrendColor(d.trend)}>
+                  {d.trend === "up" ? "+" : d.trend === "down" ? "-" : ""}{Math.abs(d.currentScore - d.baselineScore)}%
                 </Text>
               </Box>
             </Grid>
@@ -223,7 +267,7 @@ export function SimpleReport({
         <CardBody>
           <VStack spacing={4} align="stretch">
             <Text fontWeight="bold" fontSize="lg">💡 Recomendaciones</Text>
-            {data.recommendations.map((rec, i) => (
+            {d.recommendations.map((rec, i) => (
               <HStack key={i} spacing={3}>
                 <Badge colorScheme="blue" borderRadius="full" minW="20px" textAlign="center">{i + 1}</Badge>
                 <Text fontSize="sm">{rec}</Text>
@@ -239,10 +283,10 @@ export function SimpleReport({
           <VStack spacing={3}>
             <Text fontWeight="bold">ℹ️ Información del Reporte</Text>
             <Grid templateColumns="repeat(2, 1fr)" gap={4} w="full" fontSize="sm" color="gray.600">
-              <HStack><FaUser /><Text>Paciente: {data.patientName}</Text></HStack>
-              <HStack><FaCalendarAlt /><Text>Última sesión: {new Date(data.lastSession).toLocaleDateString("es-ES")}</Text></HStack>
-              <HStack><FaChartLine /><Text>Período: {data.period}</Text></HStack>
-              <HStack><FaBrain /><Text>Estado: {getScoreLabel(data.currentScore)}</Text></HStack>
+              <HStack><FaUser /><Text>Paciente: {d.patientName}</Text></HStack>
+              <HStack><FaCalendarAlt /><Text>Última sesión: {new Date(d.lastSession).toLocaleDateString("es-ES")}</Text></HStack>
+              <HStack><FaChartLine /><Text>Período: {d.period}</Text></HStack>
+              <HStack><FaBrain /><Text>Estado: {getScoreLabel(d.currentScore)}</Text></HStack>
             </Grid>
           </VStack>
         </CardBody>
@@ -250,4 +294,3 @@ export function SimpleReport({
     </VStack>
   );
 }
-

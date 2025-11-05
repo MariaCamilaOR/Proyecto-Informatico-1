@@ -2,9 +2,82 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
-import { Box, Heading, Text, VStack, Card, CardBody, HStack, Avatar, Button, Checkbox, Textarea, useToast, Divider } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  Text,
+  VStack,
+  Card,
+  CardBody,
+  HStack,
+  Avatar,
+  Button,
+  Checkbox,
+  Textarea,
+  useToast,
+  Divider,
+} from "@chakra-ui/react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
+
+// ------------ Helpers de formateo ------------
+const normalizeToList = (val: any): string[] => {
+  if (val == null) return [];
+  if (Array.isArray(val)) {
+    return val.map((v) => String(v).trim()).filter(Boolean);
+  }
+  if (typeof val === "object") {
+    return Object.values(val)
+      .flatMap((v) => normalizeToList(v))
+      .filter(Boolean);
+  }
+
+  let s = String(val).trim();
+  if (!s) return [];
+
+  try {
+    const parsed = JSON.parse(s);
+    return normalizeToList(parsed);
+  } catch {
+    s = s.replace(/[{}\[\]"]/g, "");
+    return s
+      .split(/[,;\n]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+};
+
+const quoteList = (arr: string[]) => arr.map((x) => `"${x}"`).join(", ");
+
+const formatDescriptionData = (data: any): string => {
+  if (!data) return "";
+  const people = normalizeToList(data.people);
+  const places = normalizeToList(data.places);
+  const events = normalizeToList(data.events);
+  const emotions = normalizeToList(data.emotions);
+  const tags = normalizeToList(data.tags);
+  const details = (data.details ?? "").toString().trim();
+
+  const parts: string[] = [];
+  if (people.length) parts.push(`foto de ${quoteList(people)}`);
+  if (places.length) parts.push(`en ${quoteList(places)}`);
+  if (events.length) parts.push(`durante ${quoteList(events)}`);
+  if (emotions.length) parts.push(`emociones ${quoteList(emotions)}`);
+  if (details) parts.push(`detalles: "${details}"`);
+  if (tags.length)
+    parts.push(
+      `tags: ${tags.map((t) => `#${t.replace(/\s+/g, "_")}`).join(", ")}`
+    );
+
+  return parts.join(", ");
+};
+
+const formatDescription = (d: any): string => {
+  if (!d) return "";
+  if (d.type === "text") return (d.description ?? "").toString().trim();
+  return formatDescriptionData(d.data);
+};
+// ------------ /Helpers ------------
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,41 +112,68 @@ export default function PatientDetail() {
     }
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+  }, [id]);
 
-  const toggle = (descId: string) => setSelected((s) => ({ ...s, [descId]: !s[descId] }));
+  const toggle = (descId: string) =>
+    setSelected((s) => ({ ...s, [descId]: !s[descId] }));
 
   const handleCreateReport = async () => {
     if (!id) return;
-    // gather selected descriptions
     const selectedList = descriptions.filter((d) => selected[d.id]);
     if (selectedList.length === 0 && !baseline) {
-      toast({ title: "Nada seleccionado", description: "Selecciona al menos una descripción o escribe una línea base.", status: "warning" });
+      toast({
+        title: "Nada seleccionado",
+        description:
+          "Selecciona al menos una descripción o escribe una línea base.",
+        status: "warning",
+      });
       return;
     }
 
     try {
-      const payload = { patientId: id, data: { descriptions: selectedList, createdBy: user?.uid }, baseline };
+      const payload = {
+        patientId: id,
+        data: { descriptions: selectedList, createdBy: user?.uid },
+        baseline,
+      };
       await api.post(`/reports`, payload);
       toast({ title: "Reporte creado", status: "success" });
-      // refresh reports
       const r = await api.get(`/reports/patient/${id}`);
       setReports(r.data || []);
     } catch (e) {
       console.error("Failed to create report", e);
-      toast({ title: "Error", description: "No se pudo crear el reporte.", status: "error" });
+      toast({
+        title: "Error",
+        description: "No se pudo crear el reporte.",
+        status: "error",
+      });
     }
   };
 
   const handleRequestBaseline = async () => {
     if (!id) return;
     try {
-      await api.post(`/notifications`, { patientId: id, type: "baseline_request", message });
-      toast({ title: "Solicitud enviada", description: "Se solicitó al paciente que establezca una línea base.", status: "success" });
+      await api.post(`/notifications`, {
+        patientId: id,
+        type: "baseline_request",
+        message,
+      });
+      toast({
+        title: "Solicitud enviada",
+        description:
+          "Se solicitó al paciente que establezca una línea base.",
+        status: "success",
+      });
       setMessage("");
     } catch (e) {
       console.error("Failed to send notification", e);
-      toast({ title: "Error", description: "No se pudo enviar la solicitud.", status: "error" });
+      toast({
+        title: "Error",
+        description: "No se pudo enviar la solicitud.",
+        status: "error",
+      });
     }
   };
 
@@ -84,58 +184,138 @@ export default function PatientDetail() {
         <Sidebar />
         <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack align="stretch" spacing={6}>
-            <Heading>Paciente: {patient?.displayName || patient?.email || id}</Heading>
+            <Heading>
+              Paciente: {patient?.displayName || patient?.email || id}
+            </Heading>
 
-            <Card><CardBody>
-              <Heading size="sm">Descripciones del paciente</Heading>
-              <Text fontSize="sm" color="gray.600">Selecciona las descripciones que quieras incluir en un reporte.</Text>
-              <VStack align="stretch" mt={3}>
-                {descriptions.length === 0 ? <Text>No hay descripciones.</Text> : descriptions.map((d) => (
-                  <Card key={d.id}><CardBody>
-                    <HStack align="start" justify="space-between">
-                      <HStack>
-                        <Avatar name={d.authorUid || 'Paciente'} size="sm" />
-                        <Box>
-                          <Text fontWeight="bold">{d.type || 'descripcion'}</Text>
-                          <Text fontSize="sm">{d.type === 'text' ? d.description : JSON.stringify(d.data)}</Text>
-                        </Box>
-                      </HStack>
-                      <Checkbox isChecked={!!selected[d.id]} onChange={() => toggle(d.id)}>Incluir</Checkbox>
-                    </HStack>
-                  </CardBody></Card>
-                ))}
-              </VStack>
-              <Divider my={4} />
-              <Heading size="sm">Crear Reporte</Heading>
-              <Text fontSize="sm" color="gray.600">Puedes incluir las descripciones seleccionadas y/o una línea base.</Text>
-              <Textarea mt={2} placeholder="Línea base (opcional)" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
-              <HStack justify="flex-end" mt={3}>
-                <Button colorScheme="green" onClick={handleCreateReport}>Crear Reporte</Button>
-              </HStack>
-            </CardBody></Card>
-
-            <Card><CardBody>
-              <Heading size="sm">Solicitar Línea Base</Heading>
-              <Text fontSize="sm" color="gray.600">Envía una solicitud al paciente para que complete una línea base que puedas usar en futuros reportes.</Text>
-              <Textarea mt={2} placeholder="Mensaje al paciente (opcional)" value={message} onChange={(e) => setMessage(e.target.value)} />
-              <HStack justify="flex-end" mt={3}>
-                <Button colorScheme="blue" onClick={handleRequestBaseline}>Solicitar Línea Base</Button>
-              </HStack>
-            </CardBody></Card>
-
-            <Card><CardBody>
-              <Heading size="sm">Reportes previos</Heading>
-              {reports.length === 0 ? <Text>No hay reportes.</Text> : (
-                <VStack align="stretch">
-                  {reports.map((r) => (
-                    <Card key={r.id}><CardBody>
-                      <Text fontWeight="bold">{new Date(r.createdAt?.toDate ? r.createdAt.toDate() : r.createdAt).toLocaleString()}</Text>
-                      <Text fontSize="sm">{JSON.stringify(r.data)}</Text>
-                    </CardBody></Card>
-                  ))}
+            <Card>
+              <CardBody>
+                <Heading size="sm">Descripciones del paciente</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Selecciona las descripciones que quieras incluir en un
+                  reporte.
+                </Text>
+                <VStack align="stretch" mt={3}>
+                  {descriptions.length === 0 ? (
+                    <Text>No hay descripciones.</Text>
+                  ) : (
+                    descriptions.map((d) => (
+                      <Card key={d.id}>
+                        <CardBody>
+                          <HStack align="start" justify="space-between">
+                            <HStack>
+                              <Avatar
+                                name={d.authorUid || "Paciente"}
+                                size="sm"
+                              />
+                              <Box>
+                                <Text fontWeight="bold">
+                                  {d.type || "descripcion"}
+                                </Text>
+                                <Text fontSize="sm">
+                                  {formatDescription(d) || "(sin detalles)"}
+                                </Text>
+                              </Box>
+                            </HStack>
+                            <Checkbox
+                              isChecked={!!selected[d.id]}
+                              onChange={() => toggle(d.id)}
+                            >
+                              Incluir
+                            </Checkbox>
+                          </HStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
                 </VStack>
-              )}
-            </CardBody></Card>
+
+                <Divider my={4} />
+                <Heading size="sm">Crear Reporte</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Puedes incluir las descripciones seleccionadas y/o una línea
+                  base.
+                </Text>
+                <Textarea
+                  mt={2}
+                  placeholder="Línea base (opcional)"
+                  value={baseline}
+                  onChange={(e) => setBaseline(e.target.value)}
+                />
+                <HStack justify="flex-end" mt={3}>
+                  <Button colorScheme="green" onClick={handleCreateReport}>
+                    Crear Reporte
+                  </Button>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Heading size="sm">Solicitar Línea Base</Heading>
+                <Text fontSize="sm" color="gray.600">
+                  Envía una solicitud al paciente para que complete una línea
+                  base que puedas usar en futuros reportes.
+                </Text>
+                <Textarea
+                  mt={2}
+                  placeholder="Mensaje al paciente (opcional)"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <HStack justify="flex-end" mt={3}>
+                  <Button colorScheme="blue" onClick={handleRequestBaseline}>
+                    Solicitar Línea Base
+                  </Button>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Heading size="sm">Reportes previos</Heading>
+                {reports.length === 0 ? (
+                  <Text>No hay reportes.</Text>
+                ) : (
+                  <VStack align="stretch">
+                    {reports.map((r) => (
+                      <Card key={r.id}>
+                        <CardBody>
+                          <Text fontWeight="bold">
+                            {new Date(
+                              r.createdAt?.toDate
+                                ? r.createdAt.toDate()
+                                : r.createdAt
+                            ).toLocaleString()}
+                          </Text>
+
+                          {r.baseline ? (
+                            <Text fontSize="sm" mt={1}>
+                              <b>Línea base:</b> {r.baseline}
+                            </Text>
+                          ) : null}
+
+                          {Array.isArray(r.data?.descriptions) &&
+                          r.data.descriptions.length > 0 ? (
+                            <VStack align="stretch" mt={2} spacing={1}>
+                              {r.data.descriptions.map((dd: any) => (
+                                <Text key={dd.id} fontSize="sm">
+                                  • {formatDescription(dd) || "(sin detalles)"}
+                                </Text>
+                              ))}
+                            </VStack>
+                          ) : (
+                            <Text fontSize="sm" mt={2}>
+                              (sin descripciones)
+                            </Text>
+                          )}
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </VStack>
+                )}
+              </CardBody>
+            </Card>
           </VStack>
         </Box>
       </HStack>
