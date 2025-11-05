@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { auth } from "../firebaseAdmin";
+import { auth, firestore } from "../firebaseAdmin";
 
 export type Role = "patient" | "caregiver" | "doctor";
 
@@ -29,11 +29,30 @@ export async function verifyTokenMiddleware(req: Request, res: Response, next: N
     // eslint-disable-next-line no-console
     console.log(`Verified token for uid=${decoded.uid}`);
 
-    const role = (decoded.role || decoded["role"]) as Role | undefined;
-    const linked = (decoded.linkedPatientIds || decoded["linkedPatientIds"]) as string[] | undefined;
-    if (!role || !linked) return res.status(403).json({ error: "claims_missing" });
+    let role = (decoded.role || decoded["role"]) as Role | undefined;
+    let linked = (decoded.linkedPatientIds || decoded["linkedPatientIds"]) as string[] | undefined;
 
-    (req as any).user = { uid: decoded.uid, role, linkedPatientIds: linked } as AuthedUser;
+    // If token doesn't include role/linked claims, try to read them from Firestore user profile as a fallback.
+    if (!role || !linked) {
+      try {
+        const doc = await firestore.collection("users").doc(String(decoded.uid)).get();
+        if (doc.exists) {
+          const data = doc.data() as any;
+          role = role || (String(data.role || "") as Role);
+          if (Array.isArray(data.linkedPatientIds)) linked = data.linkedPatientIds;
+        }
+      } catch (err) {
+        // continue and let the later check fail
+        // eslint-disable-next-line no-console
+        console.warn("Failed to read user profile for claims fallback", err);
+      }
+    }
+
+  // Require role; linkedPatientIds is optional and defaults to an empty array.
+  if (!role) return res.status(403).json({ error: "claims_missing_role" });
+  if (!linked) linked = [];
+
+  (req as any).user = { uid: decoded.uid, role, linkedPatientIds: linked } as AuthedUser;
     return next();
   } catch (err: any) {
     // eslint-disable-next-line no-console

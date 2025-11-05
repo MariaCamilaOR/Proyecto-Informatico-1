@@ -6,6 +6,7 @@ import photosRouter from "./routes/photos";
 import reportsRouter from "./routes/reports";
 import usersRouter from "./routes/users";
 import descriptionsRouter from "./routes/descriptions";
+import notificationsRouter from "./routes/notifications";
 import patientsRouter from "./routes/patients";
 import { verifyTokenMiddleware } from "./middleware/expressAuth";
 
@@ -25,6 +26,7 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/photos", verifyTokenMiddleware, photosRouter);
 app.use("/api/reports", verifyTokenMiddleware, reportsRouter);
 app.use("/api/descriptions", verifyTokenMiddleware, descriptionsRouter);
+app.use("/api/notifications", verifyTokenMiddleware, notificationsRouter);
 app.use("/api/patients", verifyTokenMiddleware, patientsRouter);
 // Users route handles claim assignment for newly-registered users
 app.use("/api/users", usersRouter);

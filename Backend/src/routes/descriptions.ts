@@ -41,6 +41,9 @@ router.post("/text", async (req, res) => {
     const doc = await docRef.get();
     return res.status(201).json({ id: docRef.id, ...doc.data() });
   } catch (e: any) {
+    // Log the error server-side for debugging
+    // eslint-disable-next-line no-console
+    console.error('[descriptions] error:', e?.message || String(e), e?.stack || '');
     return res.status(500).json({ error: e.message || String(e) });
   }
 });
@@ -92,9 +95,21 @@ router.post("/wizard", async (req, res) => {
 router.get("/patient/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const snap = await firestore.collection("descriptions").where("patientId", "==", id).orderBy("createdAt", "desc").get();
+        const snap = await firestore.collection("descriptions").where("patientId", "==", id).get();
     const items: any[] = [];
     snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+        
+        // Normalize createdAt (supports Firestore Timestamp and plain Date/string)
+        const toMillis = (v: any) => {
+          if (!v) return 0;
+          if (v.toDate && typeof v.toDate === 'function') return v.toDate().getTime();
+          const n = Number(v);
+          if (!Number.isNaN(n)) return n;
+          const dt = new Date(v);
+          return isNaN(dt.getTime()) ? 0 : dt.getTime();
+        };
+        
+        items.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
     return res.json(items);
   } catch (e: any) {
     return res.status(500).json({ error: e.message || String(e) });

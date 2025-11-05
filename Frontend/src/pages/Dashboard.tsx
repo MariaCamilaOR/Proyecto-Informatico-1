@@ -99,7 +99,7 @@ export default function Dashboard() {
                 <HStack spacing={3} wrap="wrap">
                   {role === "PATIENT" && (
                     <>
-                      <Button onClick={() => nav("/patient/gallery")} colorScheme="teal">Ver Galería</Button>
+                      <Button onClick={() => nav("/patient/caretaker")} colorScheme="teal">Mi cuidador</Button>
                       <Button onClick={() => nav("/describe/wizard")} variant="outline">Describir (Wizard)</Button>
                       <Button onClick={() => nav("/reminders")} variant="ghost">Recordatorios</Button>
                     </>

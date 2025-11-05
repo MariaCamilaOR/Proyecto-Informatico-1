@@ -57,10 +57,12 @@ export function useAuth() {
                 // linked patients
                 const linked = (snap.exists() && Array.isArray(snap.data()?.linkedPatientIds) && snap.data()?.linkedPatientIds) ||
                     (role === ROLES.PATIENT ? [u.uid] : ["demo-patient-123"]);
+                const inviteCode = snap.exists() ? (snap.data()?.inviteCode ?? null) : null;
                 const userObj = {
                     uid: u.uid,
                     email: u.email ?? "",
                     role,
+                    inviteCode,
                     linkedPatientIds: linked,
                     displayName: u.displayName ?? undefined,
                     photoURL: u.photoURL ?? undefined,

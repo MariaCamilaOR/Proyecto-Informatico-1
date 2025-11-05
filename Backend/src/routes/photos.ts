@@ -76,18 +76,45 @@ router.post("/upload", upload.array("files", 10), async (req, res) => {
     if (!files || files.length === 0) return res.status(400).json({ error: "no_files" });
     if (!patientId) return res.status(400).json({ error: "missing_patientId" });
 
-    // Authorization: only caregivers may upload photos
+    // Authorization: robust checks
     try {
       const user = (req as any).user;
       if (!user) return res.status(403).json({ error: "forbidden" });
+
+      // Log who is attempting the upload for easier debugging
+      // eslint-disable-next-line no-console
+      console.log("Photo upload attempt", { uid: user.uid, role: user.role, linkedPatientIds: user.linkedPatientIds, patientId });
+
       const roleRaw = String(user.role || "");
       const role = roleRaw.toUpperCase();
-      const linked: string[] = user.linkedPatientIds || [];
-      if (role !== "CAREGIVER") {
+
+      // Allow patient to upload for themselves
+      if (role === "PATIENT") {
+        if (patientId !== user.uid) return res.status(403).json({ error: "forbidden_patient" });
+      } else if (role === "CAREGIVER") {
+        // caregivers: verify either caregiver.linkedPatientIds contains the patientId OR the patient's assignedCaregiverId equals this caregiver
+        const linked: string[] = Array.isArray(user.linkedPatientIds) ? user.linkedPatientIds : [];
+
+        // Fetch patient doc to verify role/assignment (defensive)
+        const patientDoc = await firestore.collection("users").doc(patientId).get();
+        if (!patientDoc.exists) return res.status(404).json({ error: "patient_not_found" });
+        const patientData = patientDoc.data() as any;
+        const patientRole = String(patientData?.role || "").toLowerCase();
+        if (patientRole && patientRole !== "patient") {
+          return res.status(403).json({ error: "forbidden_patient_role" });
+        }
+
+        const assignedCaregiverId = patientData?.assignedCaregiverId || null;
+        if (!linked.includes(patientId) && assignedCaregiverId !== user.uid) {
+          // Not linked and not assigned -> forbid
+          // eslint-disable-next-line no-console
+          console.warn("Caregiver attempted upload for unlinked patient", { caregiverUid: user.uid, patientId, linked, assignedCaregiverId });
+          return res.status(403).json({ error: "forbidden_patient" });
+        }
+      } else {
+        // other roles are not allowed to upload
         return res.status(403).json({ error: "forbidden_role" });
       }
-      // caregivers may only upload for linked patients
-      if (!linked.includes(patientId)) return res.status(403).json({ error: "forbidden_patient" });
     } catch (err) {
       // if any check fails, deny for safety
       // eslint-disable-next-line no-console

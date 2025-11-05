@@ -30,6 +30,8 @@ export function Sidebar() {
         ],
         DOCTOR: [
             ...base,
+            { path: "/doctors/patients", label: "Pacientes" },
+            { path: "/doctors/mis-pacientes", label: "Mis Pacientes" },
             { path: "/reports", label: "Reportes" },
             { path: "/alerts", label: "Alertas" },
         ],
