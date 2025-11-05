@@ -3,43 +3,46 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-// Load env file (when running scripts like `set-claims` or dev tasks)
+// Carga .env.local desde /Backend (sirve en dev y en dist)
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
-// Initialize Firebase Admin SDK using either a path to a service account
-// JSON file (SERVICE_ACCOUNT_KEY_PATH) or raw JSON in SERVICE_ACCOUNT_KEY_JSON.
+// Credenciales: por ruta o JSON inline
 const serviceAccountPath = process.env.SERVICE_ACCOUNT_KEY_PATH;
 const rawJson = process.env.SERVICE_ACCOUNT_KEY_JSON;
 
-let credential: admin.ServiceAccount | undefined;
+let credentialJson: Record<string, any> | undefined;
 
 if (serviceAccountPath) {
   const resolved = path.isAbsolute(serviceAccountPath)
     ? serviceAccountPath
     : path.join(process.cwd(), serviceAccountPath);
-  // debug log
   // eslint-disable-next-line no-console
   console.log("[firebaseAdmin] loading service account from:", resolved);
   const content = fs.readFileSync(resolved, "utf8");
-  credential = JSON.parse(content);
+  credentialJson = JSON.parse(content);
 } else if (rawJson) {
   // eslint-disable-next-line no-console
   console.log("[firebaseAdmin] loading service account from SERVICE_ACCOUNT_KEY_JSON env");
-  credential = JSON.parse(rawJson);
+  credentialJson = JSON.parse(rawJson);
 }
 
 if (!admin.apps.length) {
-  if (credential) {
+  if (credentialJson) {
+    const saProjectId = credentialJson["project_id"] || credentialJson["projectId"];
+    const bucketName =
+      process.env.FIREBASE_STORAGE_BUCKET ||
+      (saProjectId ? `${saProjectId}.appspot.com` : undefined);
+
     // eslint-disable-next-line no-console
-    console.log("[firebaseAdmin] initializing admin SDK with service account, projectId=", credential.project_id || credential.projectId);
-    // Determine storage bucket: prefer explicit env var, else fall back to <projectId>.appspot.com
-    const saProjectId = (credential as any).project_id || (credential as any).projectId;
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || (saProjectId ? `${saProjectId}.appspot.com` : undefined);
+    console.log("[firebaseAdmin] initializing admin SDK with service account, projectId=", saProjectId);
     // eslint-disable-next-line no-console
     console.log("[firebaseAdmin] using storage bucket:", bucketName || "<none>");
-    admin.initializeApp({ credential: admin.credential.cert(credential), storageBucket: bucketName });
+
+    admin.initializeApp({
+      credential: admin.credential.cert(credentialJson as admin.ServiceAccount),
+      storageBucket: bucketName,
+    });
   } else {
-    // Fall back to default credentials (e.g., GOOGLE_APPLICATION_CREDENTIALS env)
     // eslint-disable-next-line no-console
     console.log("[firebaseAdmin] initializing admin SDK with default credentials (no service account provided)");
     admin.initializeApp();

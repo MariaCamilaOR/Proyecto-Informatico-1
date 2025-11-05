@@ -20,6 +20,7 @@ export function Sidebar() {
       { path: "/photos", label: "Fotos" },
       { path: "/patient/gallery", label: "Galería" },
       { path: "/describe/wizard", label: "Describir" },
+      { path: "/quiz/results", label: "Cuestionarios" },
       { path: "/alerts", label: "Alertas" },
       { path: "/reminders", label: "Recordatorios" },
     ],
@@ -44,8 +45,11 @@ export function Sidebar() {
   // Si no hay rol aún (cargando), muestra base; si hay rol usa su menú
   const menuItems: MenuItem[] = role ? byRole[role] : base;
 
-  const isActive = (path: string) =>
-    pathname === path || pathname.startsWith(path + "/");
+  // Activo: caso especial para agrupar todas las rutas de /quiz/*
+  const isActive = (path: string) => {
+    if (path === "/quiz/results") return pathname.startsWith("/quiz");
+    return pathname === path || pathname.startsWith(path + "/");
+  };
 
   return (
     <Box className="dyr-sidebar">
