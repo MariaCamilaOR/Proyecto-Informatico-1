@@ -10,11 +10,9 @@ import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 
 type Yn = "yes" | "no";
-type QuizItem = {
-  id: string;
-  type: "yn";              // por ahora solo Yes/No
-  prompt: string;         // ej: ¿reconoces a la persona?
-};
+type QuizItem =
+  | { id: string; type: "yn"; prompt: string }
+  | { id: string; type: "mc"; prompt: string; options?: string[]; correctIndex?: number };
 
 type QuizDoc = {
   id: string;
@@ -23,7 +21,7 @@ type QuizDoc = {
   items: QuizItem[];
   createdAt?: any;
   submittedAt?: any;
-  score?: number;          // 0..1
+  score?: number; // 0..1
   classification?: string; // “leve/moderado/severo”
 };
 
@@ -42,7 +40,10 @@ export default function QuizTake() {
 
   const [loading, setLoading] = useState(true);
   const [quiz, setQuiz] = useState<QuizDoc | null>(null);
-  const [answers, setAnswers] = useState<Record<string, Yn>>({});
+  // answers can be:
+  // - for yn questions: "yes" | "no"
+  // - for mc questions: number (index of selected option)
+  const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
@@ -53,9 +54,17 @@ export default function QuizTake() {
       const q: QuizDoc = { id, ...(r.data || {}) };
       setQuiz(q);
 
-      // si el backend devolvió respuestas previas, podríamos pre-cargarlas:
-      if ((r.data?.answers) && typeof r.data.answers === "object") {
-        setAnswers(r.data.answers as Record<string, Yn>);
+      // si el backend devolvió respuestas previas (array), pre-cargarlas en el formato Record
+      if (Array.isArray(r.data?.answers)) {
+        const arr: any[] = r.data.answers;
+        const map: Record<string, string | number> = {};
+        for (const a of arr) {
+          if (a && a.itemId) {
+            if (typeof a.yn === "boolean") map[a.itemId] = a.yn ? "yes" : "no";
+            else if (typeof a.answerIndex === "number") map[a.itemId] = a.answerIndex;
+          }
+        }
+        setAnswers(map);
       }
     } catch (e: any) {
       console.error(e);
@@ -74,7 +83,7 @@ export default function QuizTake() {
   );
   const progress = total > 0 ? Math.round((answered / total) * 100) : 0;
 
-  const onChangeAnswer = (itemId: string, value: Yn) => {
+  const onChangeAnswer = (itemId: string, value: string | number) => {
     setAnswers((prev) => ({ ...prev, [itemId]: value }));
   };
 
@@ -89,8 +98,13 @@ export default function QuizTake() {
 
     try {
       setSubmitting(true);
-      // endpoint de envío (ajústalo si usaste otro en backend)
-      const payload = { answers };
+      // Convertir map de respuestas a array con la forma que espera el backend
+      // backend espera: answers: [{ itemId, answerIndex?, yn? }]
+      const answersArray = Object.entries(answers).map(([itemId, val]) => ({
+        itemId,
+        yn: val === "yes",
+      }));
+      const payload = { answers: answersArray };
       const r = await api.post(`/quizzes/${id}/submit`, payload);
 
       const score = r.data?.score ?? r.data?.result?.score;
@@ -154,15 +168,31 @@ export default function QuizTake() {
 
                         <Text>{it.prompt}</Text>
 
-                        {/* por ahora solo tipo yes/no */}
                         {it.type === "yn" && (
                           <RadioGroup
-                            onChange={(v) => onChangeAnswer(it.id, v as Yn)}
-                            value={answers[it.id] || ""}
+                            onChange={(v) => onChangeAnswer(it.id, v as string)}
+                            value={(answers[it.id] as string) || ""}
                           >
                             <Stack direction="row" spacing={6}>
                               <Radio value="yes">Sí</Radio>
                               <Radio value="no">No</Radio>
+                            </Stack>
+                          </RadioGroup>
+                        )}
+
+                        {it.type === "mc" && (
+                          <RadioGroup
+                            onChange={(v) => {
+                              // Chakra RadioGroup uses string values; parse to number
+                              const n = Number(v);
+                              onChangeAnswer(it.id, Number.isNaN(n) ? v : n);
+                            }}
+                            value={typeof answers[it.id] === "number" ? String(answers[it.id]) : (answers[it.id] as string) || ""}
+                          >
+                            <Stack direction="column" spacing={3}>
+                              {(it.options || []).map((opt, oi) => (
+                                <Radio key={oi} value={String(oi)}>{opt}</Radio>
+                              ))}
                             </Stack>
                           </RadioGroup>
                         )}

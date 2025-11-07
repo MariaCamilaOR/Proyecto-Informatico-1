@@ -31,6 +31,7 @@ import CaregiversPatients from "./pages/Caregivers/Patients";
 import DoctorsPatients from "./pages/Doctors/Patients";
 import MyPatients from "./pages/Doctors/MyPatients";
 import PatientDetail from "./pages/Doctors/PatientDetail";
+import DoctorsQuizzes from "./pages/Doctors/Quizzes";
 /** ===== Quizzes ===== */
 // OJO: carpeta singular "Quiz"
  // generar/administrar (doctor/caregiver)
@@ -268,11 +269,21 @@ export const appRoutes = (
       }
     />
     <Route
+      path="/doctors/quizzes"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <DoctorsQuizzes />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/doctors/mis-pacientes"
       element={
         <ProtectedRoute>
           <RoleGuard allowed={["DOCTOR"]}>
-            <MyPatients />
+            <Navigate to="/doctors/patients" replace />
           </RoleGuard>
         </ProtectedRoute>
       }

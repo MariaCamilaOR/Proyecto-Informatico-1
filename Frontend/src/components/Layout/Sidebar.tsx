@@ -1,6 +1,6 @@
 // src/components/Layout/Sidebar.tsx
 import { Box, VStack, Link as CLink, Text } from "@chakra-ui/react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeRole } from "../../lib/roles";
 
@@ -9,6 +9,7 @@ type MenuItem = { path: string; label: string };
 export function Sidebar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = normalizeRole(user?.role as any);
 
   // Base y menús por rol
@@ -36,7 +37,7 @@ export function Sidebar() {
     DOCTOR: [
       ...base,
       { path: "/doctors/patients", label: "Pacientes" },
-      { path: "/doctors/mis-pacientes", label: "Mis Pacientes" },
+  { path: "/doctors/quizzes", label: "Cuestionarios" },
       { path: "/reports", label: "Reportes" },
       { path: "/alerts", label: "Alertas" },
     ],
@@ -58,16 +59,21 @@ export function Sidebar() {
           const active = isActive(item.path);
           return (
             <CLink
-              key={item.path}
-              as={RouterLink}
-              to={item.path}
-              className={active ? "active" : ""}
-              _hover={{ textDecoration: "none" }}
-            >
-              <Text fontWeight={active ? "bold" : "normal"}>
-                {item.label}
-              </Text>
-            </CLink>
+                key={item.path}
+                as={RouterLink}
+                to={item.path}
+                className={active ? "active" : ""}
+                _hover={{ textDecoration: "none" }}
+                onClick={(e) => {
+                  // prevent full page reloads and force SPA navigation
+                  e.preventDefault();
+                  navigate(item.path);
+                }}
+              >
+                <Text fontWeight={active ? "bold" : "normal"}>
+                  {item.label}
+                </Text>
+              </CLink>
           );
         })}
       </VStack>

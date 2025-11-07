@@ -1,12 +1,13 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { Box, VStack, Link as CLink, Text } from "@chakra-ui/react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeRole } from "../../lib/roles";
 
 export function Sidebar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const role = normalizeRole(user?.role);
 
   // Base y menús por rol
@@ -34,7 +35,7 @@ export function Sidebar() {
     DOCTOR: [
       ...base,
       { path: "/doctors/patients", label: "Pacientes" },
-      { path: "/doctors/mis-pacientes", label: "Mis Pacientes" },
+  { path: "/doctors/quizzes", label: "Cuestionarios" },
       { path: "/reports", label: "Reportes" },
       { path: "/alerts", label: "Alertas" },
     ],
@@ -63,6 +64,10 @@ export function Sidebar() {
             to: item.path,
             className: active ? "active" : "",
             _hover: { textDecoration: "none" },
+            onClick: function (e) {
+              e.preventDefault();
+              navigate(item.path);
+            },
             children: _jsx(Text, {
               fontWeight: active ? "bold" : "normal",
               children: item.label,

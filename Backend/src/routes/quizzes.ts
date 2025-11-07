@@ -214,6 +214,7 @@ router.get("/:id", async (req, res) => {
     if (!allowPatientContext(req, data.patientId)) return res.status(403).json({ error: "forbidden_patient" });
     return res.json({ id: doc.id, ...data });
   } catch (e: any) {
+    console.error("[quizzes.get] error fetching quiz by id", e);
     return res.status(500).json({ error: e?.message || String(e) });
   }
 });
@@ -284,15 +285,40 @@ router.get("/patient/:patientId", async (req, res) => {
   try {
     const patientId = String(req.params.patientId);
     if (!allowPatientContext(req, patientId)) return res.status(403).json({ error: "forbidden_patient" });
-
+    // Avoid Firestore composite index requirement by fetching without orderBy
+    // and sorting in memory. This is fine for typical small result sets.
     const snap = await firestore.collection("quizzes")
       .where("patientId", "==", patientId)
-      .orderBy("createdAt", "desc")
       .get();
 
-    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    return res.json(data);
+    const items: any[] = [];
+    snap.forEach((doc) => {
+      const data = doc.data() as any;
+      const createdAt = data.createdAt;
+      let createdAtIso: string | null = null;
+      let createdAtMillis = 0;
+      if (createdAt && typeof createdAt.toDate === "function") {
+        createdAtIso = createdAt.toDate().toISOString();
+        createdAtMillis = createdAt.toDate().getTime();
+      } else if (createdAt instanceof Date) {
+        createdAtIso = createdAt.toISOString();
+        createdAtMillis = createdAt.getTime();
+      } else if (typeof createdAt === "string") {
+        createdAtIso = createdAt;
+        const dt = new Date(createdAt);
+        createdAtMillis = isNaN(dt.getTime()) ? 0 : dt.getTime();
+      }
+      items.push({ id: doc.id, ...data, createdAt: createdAtIso, _createdAtMillis: createdAtMillis });
+    });
+
+    // Order by createdAt desc
+    items.sort((a, b) => (b._createdAtMillis || 0) - (a._createdAtMillis || 0));
+    // remove internal field
+    items.forEach(i => delete i._createdAtMillis);
+
+    return res.json(items);
   } catch (e: any) {
+    console.error("[quizzes.patient] error listing quizzes for patient", e);
     return res.status(500).json({ error: e?.message || String(e) });
   }
 });
