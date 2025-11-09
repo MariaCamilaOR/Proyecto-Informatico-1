@@ -27,6 +27,7 @@ import RemindersSettings from "./pages/Reminders/Settings";
 
 import CaregiversManage from "./pages/Caregivers/Manage";
 import CaregiversPatients from "./pages/Caregivers/Patients";
+import CaregiverDescribe from "./pages/Caregivers/Describe";
 
 import DoctorsPatients from "./pages/Doctors/Patients";
 import MyPatients from "./pages/Doctors/MyPatients";
@@ -82,6 +83,12 @@ export const appRoutes = (
         path: "/cuidador/photos/upload",
         element: _jsx(ProtectedRoute, {
           children: _jsx(RoleGuard, { allowed: ["CAREGIVER"], children: _jsx(PhotosUpload, {}) })
+        })
+      }),
+      _jsx(Route, {
+        path: "/cuidador/describir",
+        element: _jsx(ProtectedRoute, {
+          children: _jsx(RoleGuard, { allowed: ["CAREGIVER"], children: _jsx(CaregiverDescribe, {}) })
         })
       }),
 

@@ -358,8 +358,18 @@ export default function PatientDetail() {
 
             <Card>
               <CardBody>
-                <Heading size="sm">Cuestionarios</Heading>
-                <Text fontSize="sm" color="gray.600">Lista de quizzes generados para este paciente. Haz clic para ver resultados o abrir el quiz.</Text>
+                <HStack justify="space-between" mb={4}>
+                  <Box>
+                    <Heading size="sm">Cuestionarios</Heading>
+                    <Text fontSize="sm" color="gray.600">Lista de quizzes generados para este paciente.</Text>
+                  </Box>
+                  <Button 
+                    colorScheme="blue" 
+                    onClick={() => window.location.href = `/doctors/patient/${id}/quiz`}
+                  >
+                    Generar nuevo cuestionario
+                  </Button>
+                </HStack>
                 <VStack align="stretch" mt={3}>
                   {quizzes.length === 0 ? (
                     <Text>No hay cuestionarios.</Text>

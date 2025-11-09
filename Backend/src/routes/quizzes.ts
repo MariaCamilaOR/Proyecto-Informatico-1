@@ -4,7 +4,7 @@ import admin from "../firebaseAdmin";
 
 const router = Router();
 
-/** ==== helpers de auth (tipado seguro) ==== */
+/** ==== helpers de auth ==== */
 type Role = "patient" | "caregiver" | "doctor";
 type AuthedUser = { uid: string; role?: Role; linkedPatientIds?: string[] };
 
@@ -24,16 +24,8 @@ const allowPatientContext = (req: any, patientId: string) => {
 };
 /** ========================================= */
 
-/** ==== utilidades de quiz ==== */
-const normList = (val: any): string[] => {
-  if (val == null) return [];
-  if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean);
-  if (typeof val === "object") return Object.values(val).flatMap(normList).filter(Boolean);
-  let s = String(val).trim(); if (!s) return [];
-  try { return normList(JSON.parse(s)); } catch { /* ignore */ }
-  s = s.replace(/[{}\[\]"]/g, "");
-  return s.split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
-};
+/** ==== utilidades ==== */
+const mkId = () => Math.random().toString(36).slice(2, 10);
 const uniq = (arr: string[]) => Array.from(new Set(arr.filter(Boolean)));
 const shuffle = <T,>(a: T[]) => {
   const r = [...a];
@@ -44,7 +36,6 @@ const shuffle = <T,>(a: T[]) => {
   return r;
 };
 const pickN = <T,>(arr: T[], n: number) => shuffle(arr).slice(0, n);
-const mkId = () => Math.random().toString(36).slice(2, 10);
 
 type QuizItem = {
   id: string;
@@ -53,23 +44,7 @@ type QuizItem = {
   options?: string[];
   correctIndex?: number;
   weight: number;
-  descriptionId?: string;
-  field?: string;
-};
-
-const buildMc = (
-  prompt: string,
-  correct: string,
-  pool: string[],
-  descriptionId: string,
-  field: string
-): QuizItem | null => {
-  const distractors = pickN(pool.filter(v => v !== correct), 3);
-  const options = uniq([correct, ...distractors]);
-  if (options.length < 2) return null;
-  const shuffled = shuffle(options);
-  const correctIndex = shuffled.findIndex(o => o === correct);
-  return { id: mkId(), type: "mc", prompt, options: shuffled, correctIndex, weight: 1, descriptionId, field };
+  field?: "hasEvents" | "hasPeople" | "hasPlaces" | "hasEmotions" | "hasDetails";
 };
 
 const classify = (score01: number): "Excelente" | "Bueno" | "Atención" | "Riesgo" => {
@@ -88,113 +63,116 @@ const toMillis = (v: any) => {
   const dt = new Date(v);
   return isNaN(dt.getTime()) ? 0 : dt.getTime();
 };
-
-async function attachQuizResultToReport(options: {
-  patientId: string;
-  result: { quizId: string; score: number; classification: string; submittedAt: any };
-  reportId?: string;
-}) {
-  const { patientId, result, reportId } = options;
-
-  // Asegurarse de que submittedAt sea un Timestamp y no un FieldValue
-  const finalResult = {
-    ...result,
-    submittedAt: result.submittedAt instanceof admin.firestore.Timestamp 
-      ? result.submittedAt 
-      : admin.firestore.Timestamp.now()
-  };
-
-  if (reportId) {
-    const rref = firestore.collection("reports").doc(reportId);
-    const rdoc = await rref.get();
-    if (rdoc.exists && (rdoc.data() as any)?.patientId === patientId) {
-      await rref.set(
-        { quizResults: admin.firestore.FieldValue.arrayUnion(finalResult) },
-        { merge: true }
-      );
-      return;
-    }
-  }
-
-  const rsnap = await firestore.collection("reports").where("patientId", "==", patientId).get();
-  const arr = rsnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
-  arr.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
-
-  if (arr.length > 0) {
-    const lastRef = firestore.collection("reports").doc(arr[0].id);
-    await lastRef.set(
-      { quizResults: admin.firestore.FieldValue.arrayUnion(finalResult) },
-      { merge: true }
-    );
-    return;
-  }
-
-  await firestore.collection("reports").add({
-    patientId,
-    data: { descriptions: [], createdBy: null },
-    baseline: null,
-    createdBy: null,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    quizResults: [finalResult],
-  });
-}
 /** ========================================= */
 
-/** ========= endpoints ========= */
-
-// POST /api/quizzes/generate
-// body: { patientId: string, descriptionIds?: string[], limitPerDesc?: number }
+/**
+ * POST /api/quizzes/generate
+ * body: { patientId: string, photoId?: string, limitPerDesc?: number }
+ * Si envías photoId => genera el cuestionario SOLO para esa foto (requerimiento).
+ * Si NO envías photoId => comportamiento anterior (rápido), pero se recomienda usar photoId.
+ */
 router.post("/generate", async (req, res) => {
   try {
-    const { patientId, descriptionIds, limitPerDesc = 3 } = (req.body || {}) as {
-      patientId?: string; descriptionIds?: string[]; limitPerDesc?: number;
+    const { patientId, photoId, limitPerDesc = 5 } = (req.body || {}) as {
+      patientId?: string; photoId?: string; limitPerDesc?: number;
     };
     if (!patientId) return res.status(400).json({ error: "patientId requerido" });
     if (!allowPatientContext(req, patientId)) return res.status(403).json({ error: "forbidden_patient" });
 
-    const qSnap = await firestore.collection("descriptions").where("patientId", "==", patientId).get();
-    const allDescs = qSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+    const authUser = getAuthUser(req);
 
-    const selected = Array.isArray(descriptionIds) && descriptionIds.length
-      ? allDescs.filter(d => descriptionIds.includes(d.id))
-      : allDescs.slice(0, 5);
+    let items: QuizItem[] = [];
+    let photoData: any = null;
 
-    if (!selected.length) return res.status(400).json({ error: "no_descriptions" });
-
-    const pool = {
-      people: uniq(allDescs.flatMap(d => normList((d as any)?.data?.people))),
-      places: uniq(allDescs.flatMap(d => normList((d as any)?.data?.places))),
-      events: uniq(allDescs.flatMap(d => normList((d as any)?.data?.events))),
-      emotions: uniq(allDescs.flatMap(d => normList((d as any)?.data?.emotions))),
-    };
-
-    const items: QuizItem[] = [];
-    for (const d of selected) {
-      const pid = (d as any).id;
-      const people   = normList((d as any)?.data?.people);
-      const places   = normList((d as any)?.data?.places);
-      const events   = normList((d as any)?.data?.events);
-      const emotions = normList((d as any)?.data?.emotions);
-
-      if (people.length)   { const it = buildMc("¿Quién aparece en la foto?",   people[0],   pool.people,   pid, "people");   if (it) items.push(it); }
-      if (places.length)   { const it = buildMc("¿Dónde fue tomada la foto?",   places[0],   pool.places,   pid, "places");   if (it) items.push(it); }
-      if (events.length)   { const it = buildMc("¿Qué estaba ocurriendo?",      events[0],   pool.events,   pid, "events");   if (it) items.push(it); }
-      if (emotions.length) { const it = buildMc("¿Cómo te sentías?",            emotions[0], pool.emotions, pid, "emotions"); if (it) items.push(it); }
-
-      while (items.filter(x => x.descriptionId === pid).length < Number(limitPerDesc)) {
-        items.push({ id: mkId(), type: "yn", prompt: "¿Recuerdas esta foto?", weight: 0.5, descriptionId: pid });
+    if (photoId) {
+      // ---- Generar por FOTO (caregiverAnswers como gabarito) ----
+      const photoSnap = await firestore.collection("photos").doc(photoId).get();
+      if (!photoSnap.exists) return res.status(404).json({ error: "photo_not_found" });
+      photoData = photoSnap.data() as any;
+      if (photoData.patientId !== patientId) {
+        return res.status(403).json({ error: "photo_not_for_patient" });
       }
+
+      const caregiverYN: Array<{ itemId: string; yn: boolean }> = photoData.caregiverAnswers || [];
+
+      // Ítems Y/N para los 5 campos base
+      const ynMap: Record<string, string> = {
+        hasEvents: "¿Había un evento específico?",
+        hasPeople: "¿Aparecen personas conocidas?",
+        hasPlaces: "¿Reconoces el lugar?",
+        hasEmotions: "¿Se expresa alguna emoción?",
+        hasDetails: "¿Se describen detalles concretos?",
+      };
+
+      for (const item of caregiverYN) {
+        if (ynMap[item.itemId]) {
+          items.push({
+            id: mkId(),
+            type: "yn",
+            prompt: ynMap[item.itemId],
+            weight: 1,
+            field: item.itemId as QuizItem["field"],
+          });
+        }
+      }
+
+      // Ítems MC a partir de data (si existe)
+      const data = photoData?.data || {};
+      const pools = {
+        people: Array.isArray(data.people) ? data.people : [],
+        places: Array.isArray(data.places) ? data.places : (data.places ? [String(data.places)] : []),
+        events: Array.isArray(data.events) ? data.events : (data.events ? [String(data.events)] : []),
+        emotions: Array.isArray(data.emotions) ? data.emotions : (data.emotions ? [String(data.emotions)] : []),
+      };
+
+      const addMc = (prompt: string, correct: string, pool: string[]) => {
+        const distractors = pickN(pool.filter(v => v !== correct), 3);
+        const options = uniq([correct, ...distractors]);
+        if (options.length < 2) return;
+        const shuffled = shuffle(options);
+        const correctIndex = shuffled.findIndex(o => o === correct);
+        items.push({ id: mkId(), type: "mc", prompt, options: shuffled, correctIndex, weight: 1 });
+      };
+
+      if (pools.people.length)  addMc("¿Quién aparece en la foto?", pools.people[0], pools.people);
+      if (pools.places.length)  addMc("¿Dónde fue tomada la foto?", pools.places[0], pools.places);
+      if (pools.events.length)  addMc("¿Qué estaba ocurriendo?",   pools.events[0], pools.events);
+      if (pools.emotions.length)addMc("¿Cómo te sentías?",         pools.emotions[0], pools.emotions);
+
+      // Limitar total
+      if (items.length > Number(limitPerDesc)) items = items.slice(0, Number(limitPerDesc));
+    } else {
+      // ---- (fallback) Generación simple si no mandan photoId ----
+      const descSnap = await firestore.collection("descriptions").where("patientId", "==", patientId).get();
+      if (descSnap.empty) return res.status(400).json({ error: "no_descriptions" });
+
+      // Pregunta genérica Y/N + algunas MC a partir de la primera descripción
+      items = [
+        { id: mkId(), type: "yn", prompt: "¿Recuerdas esta foto?", weight: 1, field: "hasDetails" },
+      ];
     }
 
-    const finalItems = pickN(items, Math.max(4, Math.min(items.length, selected.length * Number(limitPerDesc))));
-
-    const authUser = getAuthUser(req);
-    const docRef = await firestore.collection("quizzes").add({
+      const docRef = await firestore.collection("quizzes").add({
       patientId,
+      photoId: photoId || null,
+      photoUrl: photoData?.url || null,
       createdBy: authUser?.uid || null,
       status: "open",
-      items: finalItems,
+      items,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });    // Enviar notificación al paciente
+    await firestore.collection("notifications").add({
+      targetUid: patientId,
+      type: "NEW_QUIZ",
+      message: photoId ? "Tu doctor ha creado un nuevo cuestionario sobre una foto" : "Tu doctor ha creado un nuevo cuestionario",
+      payload: {
+        quizId: docRef.id,
+        photoId: photoId || null,
+        photoUrl: photoData?.url || null
+      },
+      createdBy: authUser?.uid || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      read: false,
     });
 
     const doc = await docRef.get();
@@ -234,6 +212,16 @@ router.post("/:id/submit", async (req, res) => {
     const map = new Map<string, any>();
     (quiz.items || []).forEach((it: any) => map.set(it.id, it));
 
+    // Si el quiz está ligado a photoId, traemos caregiverAnswers para comparar en Y/N
+    let caregiverYN: Array<{ itemId: string; yn: boolean }> = [];
+    if (quiz.photoId) {
+      const photoSnap = await firestore.collection("photos").doc(String(quiz.photoId)).get();
+      if (photoSnap.exists) {
+        caregiverYN = (photoSnap.data() as any)?.caregiverAnswers || [];
+      }
+    }
+    const careMap = new Map<string, boolean>(caregiverYN.map(a => [a.itemId, !!a.yn]));
+
     let correct = 0;
     let totalWeight = 0;
 
@@ -242,35 +230,65 @@ router.post("/:id/submit", async (req, res) => {
       if (!it) continue;
       const w = it.weight ?? 1;
       totalWeight += w;
+
       if (it.type === "mc") {
         if (typeof a.answerIndex === "number" && a.answerIndex === it.correctIndex) correct += w;
       } else if (it.type === "yn") {
-        if (a.yn === true) correct += w; // Sí = recuerda
+        // Comparación CON el cuidador si tenemos gabarito; si no, consideramos "sí" como acierto
+        if (careMap.size > 0 && it.field) {
+          const right = careMap.get(it.field);
+          if (right === !!a.yn) correct += w;
+        } else if (a.yn === true) {
+          correct += w;
+        }
       }
     }
 
     const score = totalWeight > 0 ? correct / totalWeight : 0;
     const classification = classify(score);
 
-    await ref.set({
-      ...quiz,
-      status: "completed",
-      answers,
-      score,
-      classification,
-      submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
-
-    const reportId: string | undefined = req.body?.reportId || undefined;
-    await attachQuizResultToReport({
-      patientId: quiz.patientId,
-      reportId,
-      result: {
-        quizId: ref.id,
+    await ref.set(
+      {
+        status: "completed",
+        answers,
         score,
         classification,
-        submittedAt: admin.firestore.Timestamp.now(), // Usar Timestamp.now() en lugar de FieldValue para arrays
+        submittedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // Agregados por paciente y por foto
+    const reportRef = firestore.collection("reports").doc(quiz.patientId);
+    await firestore.runTransaction(async (t) => {
+      const rs = await t.get(reportRef);
+      const data = rs.exists ? rs.data() : {};
+
+      const count = (data?.count || 0) + 1;
+      const sum = (data?.sum || 0) + Math.round(score * 100);
+      const avgRecall = Math.round(sum / count);
+
+      const perPhoto = data?.perPhoto || {};
+      if (quiz.photoId) {
+        const cur = perPhoto[quiz.photoId] || { count: 0, sum: 0, avg: 0 };
+        cur.count += 1;
+        cur.sum += Math.round(score * 100);
+        cur.avg = Math.round(cur.sum / cur.count);
+        perPhoto[quiz.photoId] = cur;
       }
+
+      t.set(
+        reportRef,
+        {
+          patientId: quiz.patientId,
+          sum,
+          count,
+          avgRecall,
+          perPhoto,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
     });
 
     return res.json({ id: ref.id, score, classification });
@@ -285,35 +303,18 @@ router.get("/patient/:patientId", async (req, res) => {
   try {
     const patientId = String(req.params.patientId);
     if (!allowPatientContext(req, patientId)) return res.status(403).json({ error: "forbidden_patient" });
-    // Avoid Firestore composite index requirement by fetching without orderBy
-    // and sorting in memory. This is fine for typical small result sets.
-    const snap = await firestore.collection("quizzes")
-      .where("patientId", "==", patientId)
-      .get();
 
+    const snap = await firestore.collection("quizzes").where("patientId", "==", patientId).get();
     const items: any[] = [];
     snap.forEach((doc) => {
       const data = doc.data() as any;
       const createdAt = data.createdAt;
-      let createdAtIso: string | null = null;
       let createdAtMillis = 0;
-      if (createdAt && typeof createdAt.toDate === "function") {
-        createdAtIso = createdAt.toDate().toISOString();
-        createdAtMillis = createdAt.toDate().getTime();
-      } else if (createdAt instanceof Date) {
-        createdAtIso = createdAt.toISOString();
-        createdAtMillis = createdAt.getTime();
-      } else if (typeof createdAt === "string") {
-        createdAtIso = createdAt;
-        const dt = new Date(createdAt);
-        createdAtMillis = isNaN(dt.getTime()) ? 0 : dt.getTime();
-      }
-      items.push({ id: doc.id, ...data, createdAt: createdAtIso, _createdAtMillis: createdAtMillis });
+      if (createdAt?.toDate) createdAtMillis = createdAt.toDate().getTime();
+      items.push({ id: doc.id, ...data, _createdAtMillis: createdAtMillis });
     });
 
-    // Order by createdAt desc
     items.sort((a, b) => (b._createdAtMillis || 0) - (a._createdAtMillis || 0));
-    // remove internal field
     items.forEach(i => delete i._createdAtMillis);
 
     return res.json(items);

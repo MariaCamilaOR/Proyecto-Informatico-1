@@ -4,7 +4,6 @@ import admin from "../firebaseAdmin";
 
 const router = Router();
 
-// Util
 const toMillis = (v: any) => {
   if (!v) return 0;
   if (v?.toDate && typeof v.toDate === "function") return v.toDate().getTime();
@@ -43,7 +42,7 @@ router.get("/patient/:id", async (req, res) => {
   }
 });
 
-// POST /api/reports  body: { patientId, data: { descriptions: [...] }, baseline? }
+// POST /api/reports
 router.post("/", async (req, res) => {
   try {
     const authUser = (req as any).user;
@@ -71,7 +70,6 @@ router.post("/", async (req, res) => {
 });
 
 // PATCH /api/reports/:id/attach-quiz
-// body: { quizId, score, classification, submittedAt }
 router.patch("/:id/attach-quiz", async (req, res) => {
   try {
     const id = String(req.params.id);
@@ -103,60 +101,40 @@ router.patch("/:id/attach-quiz", async (req, res) => {
 });
 
 // GET /api/reports/summary/:patientId?days=30
-// Calcula métricas simples para el dashboard.
 router.get("/summary/:patientId", async (req, res) => {
   try {
     const patientId = String(req.params.patientId);
     const days = Number(req.query.days || 30);
     const since = Date.now() - days * 24 * 60 * 60 * 1000;
 
-    // Quizzes completados
-    const qSnap = await firestore
-      .collection("quizzes")
-      .where("patientId", "==", patientId)
-      .get();
-
-    const quizzes = qSnap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as any) }))
-      .filter((q) => q.status === "completed");
+    const qSnap = await firestore.collection("quizzes").where("patientId", "==", patientId).get();
+    const quizzes = qSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })).filter((q) => q.status === "completed");
 
     const recent = quizzes.filter((q) => toMillis(q.submittedAt) >= since);
-    const sessionsCompleted = recent.length;
-
-    // Puntuación actual (promedio en ventana o global si no hubo recientes)
-    const takeScores = (arr: any[]) =>
+    const takePct = (arr: any[]) =>
       arr.length ? Math.round((arr.reduce((s, q) => s + Number(q.score || 0), 0) / arr.length) * 100) : 0;
 
-    const currentScorePct = takeScores(recent.length ? recent : quizzes);
+    const currentScorePct = takePct(recent.length ? recent : quizzes);
 
-    // Línea base: promedio de las primeras 3 sesiones (o 75 si no hay datos)
     const sortedAll = [...quizzes].sort((a, b) => toMillis(a.submittedAt) - toMillis(b.submittedAt));
     const baselineSample = sortedAll.slice(0, 3);
-    const baselinePct = baselineSample.length ? takeScores(baselineSample) : 75;
-
+    const baselinePct = baselineSample.length ? takePct(baselineSample) : 75;
     const diffPct = currentScorePct - baselinePct;
 
-    // Fotos descritas (totales)
-    const dSnap = await firestore
-      .collection("descriptions")
-      .where("patientId", "==", patientId)
-      .get();
+    const dSnap = await firestore.collection("descriptions").where("patientId", "==", patientId).get();
     const photosDescribedTotal = dSnap.size;
 
-    // Métricas de vitrina (puedes refinar luego)
     const recallPct = currentScorePct;
     const coherencePct = Math.min(100, Math.round(currentScorePct * 0.95) + 5);
 
     const recommendations = [
-      currentScorePct >= baselinePct
-        ? "Mantener sesiones regulares"
-        : "Incrementar sesiones y reforzar recuerdos positivos",
-      photosDescribedTotal < 10 ? " Describir más fotos ayuda a personalizar los quizzes" : "🎯 Buen volumen de material descrito",
+      currentScorePct >= baselinePct ? "Mantener sesiones regulares" : "Incrementar sesiones y reforzar recuerdos positivos",
+      photosDescribedTotal < 10 ? "Describir más fotos ayuda a personalizar los quizzes" : "🎯 Buen volumen de material descrito",
     ];
 
     return res.json({
       windowDays: days,
-      sessionsCompleted,
+      sessionsCompleted: recent.length,
       photosDescribedTotal,
       currentScorePct,
       baselinePct,

@@ -24,18 +24,21 @@ export function Navbar() {
 
   return (
     <Box 
+      className="dyr-navbar"
       bgGradient="linear(to-br, blue.50, white)"
       color="blue.700" 
       p={4}
       borderBottom="2px solid"
       borderColor="blue.200"
-      boxShadow="0 2px 8px rgba(25, 118, 210, 0.1)"
+      boxShadow="0 2px 8px rgba(25, 118, 210, 0.06)"
     >
       <Flex align="center">
         <Heading size="md" color="blue.700">DoYouRemember</Heading>
         <Spacer />
         {/* Show invite code for patients */}
         <InviteCodeDisplay />
+        {/* If caregiver, show quick link to describe photos */}
+        <NavActions />
         <Button 
           variant="outline" 
           colorScheme="blue" 
@@ -80,5 +83,19 @@ function InviteCodeDisplay() {
       </Box>
       <IconButton aria-label="Copiar código" icon={<CopyIcon />} size="sm" onClick={handleCopy} />
     </HStack>
+  );
+}
+
+function NavActions() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  if (!user) return null;
+  const role = user.role;
+  if (role !== "CAREGIVER") return null;
+
+  return (
+    <Button mr={3} colorScheme="teal" variant="ghost" onClick={() => navigate('/cuidador/describir')}>
+      Describir fotos
+    </Button>
   );
 }

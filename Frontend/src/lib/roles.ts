@@ -48,6 +48,9 @@ export function labelForRole(role?: string | Role): string {
 /** Permisos por rol (puedes ampliar/ajustar) */
 export const ROLE_PERMISSIONS: Record<Role, readonly string[]> = {
   PATIENT: [
+    "describe_photos",
+    "take_quiz",
+    "view_own_reports",
     "view_own_photos",
     "describe_photos",
     "view_own_reports",
@@ -56,9 +59,12 @@ export const ROLE_PERMISSIONS: Record<Role, readonly string[]> = {
   CAREGIVER: [
     "view_linked_patients",
     "upload_photos_for_patient",
+    "describe_photos_for_patient",
+    "view_patient_photos",
     "view_patient_reports",
     "manage_patient_reminders",
     "configure_alerts",
+    "create_descriptions",
   ],
   DOCTOR: [
     "view_all_patients",

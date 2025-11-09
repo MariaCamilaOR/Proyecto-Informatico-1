@@ -27,6 +27,7 @@ export function Sidebar() {
       ...base,
       { path: "/photos", label: "Fotos" },
       { path: "/cuidador/photos/upload", label: "Subir Fotos" },
+      { path: "/cuidador/describir", label: "Describir Fotos" },
       { path: "/caregivers/patients", label: "Mis Pacientes" },
       { path: "/caregivers/manage", label: "Gestionar Cuidadores" },
       { path: "/alerts", label: "Alertas" },

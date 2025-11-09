@@ -2,6 +2,8 @@ import { Box, Heading, Text, Flex, VStack, Alert, AlertIcon } from "@chakra-ui/r
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { SimpleReport } from "../../components/Reports/SimpleReport";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission, normalizeRole } from "../../lib/roles";
 
@@ -35,6 +37,22 @@ export default function ReportsTrends() {
 
   const canExport = role === "DOCTOR";
   const canShare = role === "DOCTOR" || role === "CAREGIVER";
+  const [patients, setPatients] = useState<any[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const loadPatients = async () => {
+      if (role !== "DOCTOR") return;
+      try {
+        const resp = await api.get(`/patients/doctor/${user?.uid}`);
+        setPatients(resp.data || []);
+        if ((resp.data || []).length > 0) setSelectedPatientId(resp.data[0].id);
+      } catch (err) {
+        console.error("Failed to load doctor patients", err);
+      }
+    };
+    loadPatients();
+  }, [role, user?.uid]);
 
   return (
     <Box>
@@ -47,8 +65,20 @@ export default function ReportsTrends() {
               <Heading mb={2} color="blue.700">📈 Tendencias y Progreso</Heading>
               <Text color="blue.600">Monitorea el progreso y compáralo con la línea base.</Text>
             </Box>
+            {role === "DOCTOR" && (
+              <Box>
+                <Text fontSize="sm" color="gray.600" mb={2}>Seleccionar paciente</Text>
+                <select value={selectedPatientId || ""} onChange={(e) => setSelectedPatientId(e.target.value || undefined)} style={{ padding: 8, borderRadius: 6 }}>
+                  <option value="">-- Seleccione un paciente --</option>
+                  {patients.map((p) => (
+                    <option key={p.id} value={p.id}>{p.displayName || p.email || p.id}</option>
+                  ))}
+                </select>
+              </Box>
+            )}
 
             <SimpleReport
+              patientId={selectedPatientId}
               canExport={canExport}
               canShare={canShare}
             />

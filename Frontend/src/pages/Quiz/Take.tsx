@@ -19,10 +19,12 @@ type QuizDoc = {
   patientId: string;
   status: "open" | "completed";
   items: QuizItem[];
+  photoId?: string;
+  photoUrl?: string;
   createdAt?: any;
   submittedAt?: any;
   score?: number; // 0..1
-  classification?: string; // “leve/moderado/severo”
+  classification?: string; // "leve/moderado/severo"
 };
 
 function toDate(val: any): Date | null {
@@ -147,6 +149,29 @@ export default function QuizTake() {
                   {toDate(quiz.createdAt)?.toLocaleString() || ""}
                 </Text>
               </Box>
+
+              {quiz.photoUrl && (
+                <Card>
+                  <CardBody>
+                    <VStack spacing={4}>
+                      <Text fontWeight="bold">Foto del cuestionario</Text>
+                      <Box 
+                        maxW="400px" 
+                        width="100%" 
+                        borderRadius="md" 
+                        overflow="hidden"
+                        boxShadow="md"
+                      >
+                        <img 
+                          src={quiz.photoUrl} 
+                          alt="Foto relacionada con el cuestionario"
+                          style={{ width: '100%', height: 'auto', objectFit: 'cover' }}
+                        />
+                      </Box>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
 
               <Box>
                 <Text fontWeight="bold" mb={2}>Progreso</Text>
