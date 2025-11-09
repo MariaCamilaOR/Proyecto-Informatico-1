@@ -67,7 +67,7 @@ router.post("/session/start", async (req, res) => {
         "Describe brevemente lo que ves en la foto.";
 
       const qRef = sessionRef.collection("questions").doc();
-      batch.set(qRef, {
+      batch.set(qRef, {  
         photoId: p.id,
         type,
         prompt,
