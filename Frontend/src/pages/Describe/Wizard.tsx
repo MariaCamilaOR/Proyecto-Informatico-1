@@ -142,7 +142,8 @@ export default function DescribeWizard() {
       <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
         <Box flex="1" p={{ base: 4, md: 6 }}>
-          <VStack spacing={6} align="stretch">
+          <Box className="portal">
+            <VStack spacing={6} align="stretch">
             <Box>
               <Heading color="whiteAlpha.900" mb={2}>
                 🧙‍♂️ Asistente de Descripción
@@ -240,7 +241,8 @@ export default function DescribeWizard() {
                 </VStack>
               </CardBody>
             </Card>
-          </VStack>
+            </VStack>
+          </Box>
         </Box>
       </Flex>
     </Box>

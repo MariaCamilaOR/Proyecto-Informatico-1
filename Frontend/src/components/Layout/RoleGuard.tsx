@@ -2,6 +2,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { routeByRole, normalizeRole, type Role } from "../../lib/roles";
+// layout handled by pages individually; do not wrap here
 
 export default function RoleGuard({
   allowed,

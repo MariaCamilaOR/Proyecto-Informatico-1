@@ -1,0 +1,14 @@
+import AvailableQuizzes from "./pages/Quiz/Available";
+
+// ... resto de imports existentes
+
+<Route
+  path="/quiz/available"
+  element={
+    <ProtectedRoute>
+      <RoleGuard allowed={["PATIENT"]}>
+        <AvailableQuizzes />
+      </RoleGuard>
+    </ProtectedRoute>
+  }
+/>

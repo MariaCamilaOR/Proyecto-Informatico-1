@@ -16,6 +16,15 @@ import {
   Textarea,
   useToast,
   Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Tag,
+  Badge,
 } from "@chakra-ui/react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -85,6 +94,11 @@ export default function PatientDetail() {
   const [patient, setPatient] = useState<any | null>(null);
   const [descriptions, setDescriptions] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [selectedQuiz, setSelectedQuiz] = useState<any | null>(null);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [baseline, setBaseline] = useState("");
   const [message, setMessage] = useState("");
@@ -110,6 +124,31 @@ export default function PatientDetail() {
     } catch (e) {
       console.error("Failed to load reports", e);
     }
+    try {
+      const q = await api.get(`/quizzes/patient/${id}`);
+      setQuizzes(q.data || []);
+    } catch (e) {
+      console.error("Failed to load quizzes", e);
+    }
+  };
+
+  const openQuizDetail = async (quizId: string) => {
+    try {
+      setQuizLoading(true);
+      const r = await api.get(`/quizzes/${quizId}`);
+      setSelectedQuiz(r.data || null);
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load quiz detail", err);
+      toast({ title: "Error", description: "No se pudo cargar el quiz.", status: "error" });
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedQuiz(null);
   };
 
   useEffect(() => {
@@ -316,6 +355,120 @@ export default function PatientDetail() {
                 )}
               </CardBody>
             </Card>
+
+            <Card>
+              <CardBody>
+                <HStack justify="space-between" mb={4}>
+                  <Box>
+                    <Heading size="sm">Cuestionarios</Heading>
+                    <Text fontSize="sm" color="gray.600">Lista de quizzes generados para este paciente.</Text>
+                  </Box>
+                  <Button 
+                    colorScheme="blue" 
+                    onClick={() => window.location.href = `/doctors/patient/${id}/quiz`}
+                  >
+                    Generar nuevo cuestionario
+                  </Button>
+                </HStack>
+                <VStack align="stretch" mt={3}>
+                  {quizzes.length === 0 ? (
+                    <Text>No hay cuestionarios.</Text>
+                  ) : (
+                    quizzes.map((q) => (
+                      <Card key={q.id}>
+                        <CardBody>
+                          <HStack justify="space-between">
+                            <Box>
+                              <Text fontWeight="bold">Quiz {String(q.id).slice(0,6)}</Text>
+                              <Text fontSize="sm" color="gray.600">Creado: {q.createdAt?.toDate ? q.createdAt.toDate().toLocaleString() : (q.createdAt || "")}</Text>
+                              {q.status === "completed" && (
+                                <HStack spacing={2} mt={1}>
+                                  <Text fontSize="sm">Puntaje: {Math.round((q.score ?? 0) * 100)}%</Text>
+                                  <Text fontSize="sm">Clasificación: {q.classification || "-"}</Text>
+                                </HStack>
+                              )}
+                            </Box>
+                            <HStack>
+                              <Button size="sm" variant="outline" onClick={() => window.open(`${window.location.origin}/quiz/take/${q.id}`, "_blank")}>Abrir</Button>
+                              <Button size="sm" colorScheme="blue" onClick={() => openQuizDetail(q.id)}>Ver respuestas</Button>
+                            </HStack>
+                          </HStack>
+                        </CardBody>
+                      </Card>
+                    ))
+                  )}
+                </VStack>
+              </CardBody>
+            </Card>
+            {/* Modal para ver detalle de un quiz */}
+            <Modal isOpen={isModalOpen} onClose={closeModal} size="lg">
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>Detalle del Quiz</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  {!selectedQuiz ? (
+                    <Text>Cargando…</Text>
+                  ) : (
+                    <VStack align="stretch" spacing={4}>
+                      <HStack justify="space-between">
+                        <Box>
+                          <Text fontWeight="bold">ID: {selectedQuiz.id}</Text>
+                          <Text fontSize="sm" color="gray.600">Estado: {selectedQuiz.status}</Text>
+                        </Box>
+                        <Box>
+                          {selectedQuiz.status === 'completed' && (
+                            <HStack spacing={2}>
+                              <Badge colorScheme="blue">{Math.round((selectedQuiz.score ?? 0) * 100)}%</Badge>
+                              <Tag>{selectedQuiz.classification || '-'}</Tag>
+                            </HStack>
+                          )}
+                        </Box>
+                      </HStack>
+
+                      {Array.isArray(selectedQuiz.items) && selectedQuiz.items.length > 0 ? (
+                        selectedQuiz.items.map((it: any, idx: number) => {
+                          const ans = Array.isArray(selectedQuiz.answers)
+                            ? selectedQuiz.answers.find((a: any) => a.itemId === it.id)
+                            : undefined;
+                          return (
+                            <Card key={it.id || idx}>
+                              <CardBody>
+                                <Text fontWeight="bold">Pregunta {idx + 1}</Text>
+                                <Text mt={2}>{it.prompt}</Text>
+                                {it.type === 'yn' && (
+                                  <Text mt={2}>Respuesta del paciente: {ans?.yn === true ? 'Sí' : ans?.yn === false ? 'No' : '—'}</Text>
+                                )}
+                                {it.type === 'mc' && (
+                                  <VStack align="stretch" mt={2}>
+                                    {(it.options || []).map((opt: string, oi: number) => {
+                                      const selected = typeof ans?.answerIndex === 'number' && ans.answerIndex === oi;
+                                      const correct = typeof it.correctIndex === 'number' && it.correctIndex === oi;
+                                      return (
+                                        <HStack key={oi} spacing={3}>
+                                          <Text>{opt}</Text>
+                                          {selected && <Tag colorScheme="green">Seleccionado</Tag>}
+                                          {correct && <Tag colorScheme="purple">Correcto</Tag>}
+                                        </HStack>
+                                      );
+                                    })}
+                                  </VStack>
+                                )}
+                              </CardBody>
+                            </Card>
+                          );
+                        })
+                      ) : (
+                        <Text>No hay preguntas en este quiz.</Text>
+                      )}
+                    </VStack>
+                  )}
+                </ModalBody>
+                <ModalFooter>
+                  <Button onClick={closeModal}>Cerrar</Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </VStack>
         </Box>
       </HStack>
