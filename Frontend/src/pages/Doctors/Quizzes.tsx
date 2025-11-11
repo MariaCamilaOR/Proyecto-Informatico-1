@@ -17,7 +17,7 @@ import {
   InputRightElement,
   useToast,
 } from "@chakra-ui/react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function DoctorsQuizzes() {

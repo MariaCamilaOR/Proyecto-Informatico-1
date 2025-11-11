@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { normalizeRole } from "../lib/roles";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api } from "../api";
 
 export default function Dashboard() {
   const { user } = useAuth();

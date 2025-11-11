@@ -6,7 +6,7 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { DescriptionWizard } from "../../components/PhotoDescription/DescriptionWizard";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useToast } from "@chakra-ui/react";
 export default function DescribeWizard() {
     const { user } = useAuth();

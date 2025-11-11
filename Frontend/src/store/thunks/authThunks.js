@@ -2,7 +2,7 @@ import { startLoading, finishLoading, loginSuccess, logoutSuccess, authError, } 
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { api } from '../../lib/api';
+import { api } from '../../api';
 const isIgnorablePopupError = (code) => code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
 //email y pasword
 export const registerAuth = (email, password, name, role) => {

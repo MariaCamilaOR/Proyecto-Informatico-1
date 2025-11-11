@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { FaPlus, FaFilter } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useNavigate } from "react-router-dom";
 export default function PhotosList() {
     const { user } = useAuth();

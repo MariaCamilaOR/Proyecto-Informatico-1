@@ -3,7 +3,7 @@ import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { useEffect, useState } from "react";
 import { useToast } from "@chakra-ui/react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
 import { PhotoUploader } from "../../components/PhotoUpload/PhotoUploader";
 import { useAuth } from "../../hooks/useAuth";

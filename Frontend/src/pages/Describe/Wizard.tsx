@@ -20,7 +20,7 @@ import { DescriptionWizard } from "../../components/PhotoDescription/Description
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { FaPlay } from "react-icons/fa";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useToast } from "@chakra-ui/react";
 
 type WizardPhoto = {

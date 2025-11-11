@@ -20,7 +20,7 @@ import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 
 export default function DescribeText() {
   const { user } = useAuth();

@@ -23,7 +23,7 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { useEffect, useState, useRef } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
