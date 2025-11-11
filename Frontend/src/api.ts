@@ -1,15 +1,8 @@
 import axios, { AxiosHeaders, AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getIdToken } from "./lib/auth";
 
-// VITE_API_BASE_URL YA incluye /api en producción (Render)
-// Prefer build-time env, then a runtime global (window.__VITE_API_BASE_URL) and
-// finally fall back to the known deployed backend URL so the deployed frontend
-// works even if the build env wasn't set. DO NOT fallback to localhost.
-const buildEnv = (import.meta.env.VITE_API_BASE_URL ?? "").toString().trim();
-const runtimeEnv = typeof window !== "undefined" ? String((window as any).__VITE_API_BASE_URL ?? "").trim() : "";
-const defaultProd = "https://proyecto-pi-1-backend.onrender.com/api";
-const raw = (buildEnv || runtimeEnv || defaultProd).toString().trim();
-const baseURL = raw.replace(/\/+$/, "");
+
+const baseURL = "https://proyecto-pi-1-backend.onrender.com/api";
 
 export const api = axios.create({ baseURL });
 
