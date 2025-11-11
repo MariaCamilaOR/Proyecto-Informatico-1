@@ -134,7 +134,8 @@ export default function CaregiversPatients() {
       <Flex direction={{ base: "column", md: "row" }}>
         <Sidebar />
         <Box flex="1" p={{ base: 4, md: 6 }}>
-          <VStack spacing={6} align="stretch">
+          <Box className="portal">
+            <VStack spacing={6} align="stretch">
             <Box>
               <Heading mb={2}>
                 {user?.role === "DOCTOR"
@@ -244,7 +245,8 @@ export default function CaregiversPatients() {
                 </VStack>
               </VStack>
             </Box>
-          </VStack>
+            </VStack>
+          </Box>
         </Box>
       </Flex>
     </Box>

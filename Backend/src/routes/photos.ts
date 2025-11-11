@@ -20,12 +20,18 @@ router.get("/patient/:id", async (req, res) => {
     const user = (req as any).user;
     const role = roleOf(user);
 
-    if ((role === "doctor" || role === "caregiver") && !isLinked(user, id)) {
-      return res.status(403).json({ error: "forbidden_patient" });
+    console.log('[photos] Request for patient photos', { requestedPatient: id, user, role, SKIP_AUTH: process.env.SKIP_AUTH });
+
+    // En desarrollo, permitimos acceso para pruebas
+    if (process.env.SKIP_AUTH !== "true") {
+      if ((role === "doctor" || role === "caregiver") && !isLinked(user, id)) {
+        return res.status(403).json({ error: "forbidden_patient" });
+      }
+      if (role === "patient" && user?.uid !== id) {
+        return res.status(403).json({ error: "forbidden_patient" });
+      }
     }
-    if (role === "patient" && user?.uid !== id) {
-      return res.status(403).json({ error: "forbidden_patient" });
-    }
+    console.log("Access granted to photos for user:", { role, userId: user?.uid, patientId: id });
 
     const q = firestore.collection("photos").where("patientId", "==", id).orderBy("createdAt", "desc");
     const snap = await q.get();
@@ -99,9 +105,14 @@ router.post("/upload", upload.array("files", 10), async (req, res) => {
 
     const user = (req as any).user;
     const role = roleOf(user);
-    if (role !== "caregiver") return res.status(403).json({ error: "forbidden_role" });
-    if (!isLinked(user, patientId)) return res.status(403).json({ error: "forbidden_patient" });
-    if (patientId === user.uid) return res.status(403).json({ error: "patient_must_not_be_caregiver_uid" });
+    console.log('[photos/upload] upload attempt', { user, role, patientId, SKIP_AUTH: process.env.SKIP_AUTH });
+
+    // In dev/demo mode allow demo caregiver to upload (skip strict checks)
+    if (process.env.SKIP_AUTH !== "true") {
+      if (role !== "caregiver") return res.status(403).json({ error: "forbidden_role" });
+      if (!isLinked(user, patientId)) return res.status(403).json({ error: "forbidden_patient" });
+      if (patientId === user.uid) return res.status(403).json({ error: "patient_must_not_be_caregiver_uid" });
+    }
 
     const bucket = storage.bucket();
     const created: any[] = [];

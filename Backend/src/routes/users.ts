@@ -61,4 +61,15 @@ router.get("/:id", verifyTokenMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/users/me - return current authed user (useful in dev when SKIP_AUTH=true)
+router.get("/me", verifyTokenMiddleware, async (req, res) => {
+  try {
+    const user = (req as any).user || null;
+    return res.json({ user });
+  } catch (e: any) {
+    console.error("Error in GET /api/users/me", e);
+    return res.status(500).json({ error: e?.message || String(e) });
+  }
+});
+
 export default router;

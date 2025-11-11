@@ -1,30 +1,25 @@
 import { api } from "../lib/api";
 
-
 export const useQuizzes = () => {
   /**
-   * Generar quiz con base en descripciones del paciente.
-    @param {{ patientId: string, descriptionIds?: string[], limitPerDesc?: number }} args
+   * Generar quiz.
+   * @param {{ patientId: string, photoId?: string, descriptionIds?: string[], limitPerDesc?: number }} args
    */
-  const generateQuiz = async ({ patientId, descriptionIds = [], limitPerDesc = 3 }) => {
-    const { data } = await api.post("/quizzes/generate", { patientId, descriptionIds, limitPerDesc });
-    return data; // { id, patientId, items, status, createdAt, ... }
+  const generateQuiz = async ({ patientId, photoId, descriptionIds = [], limitPerDesc = 5 }) => {
+    // el backend prioriza photoId; descriptionIds queda para compatibilidad
+    const payload = { patientId, photoId, descriptionIds, limitPerDesc };
+    const { data } = await api.post("/quizzes/generate", payload);
+    return data;
   };
 
-  /**
-   * Obtener un quiz por ID (para que el paciente lo resuelva).
-   * @param {string} quizId
-   */
+  /** Obtener quiz por id */
   const getQuiz = async (quizId) => {
     const { data } = await api.get(`/quizzes/${quizId}`);
-    return data; // { id, patientId, items, status, ... }
+    return data;
   };
 
   /**
-   * Enviar respuestas del quiz.
-   * IMPORTANTE: si pasas reportId, el backend adjunta el resultado a ese reporte;
-   * si NO lo pasas, adjunta al último reporte del paciente o crea uno si no existe.
-   *
+   * Enviar respuestas.
    * @param {string} quizId
    * @param {Array<{ itemId: string, answerIndex?: number, yn?: boolean }>} answers
    * @param {string=} reportId
@@ -33,19 +28,15 @@ export const useQuizzes = () => {
     const payload = { answers };
     if (reportId) payload.reportId = reportId;
     const { data } = await api.post(`/quizzes/${quizId}/submit`, payload);
-    return data; 
+    return data;
   };
 
-  /**
-   * Listar quizzes de un paciente (para su histórico / resultados).
-   * @param {string} patientId
-   */
+  /** Historial del paciente */
   const listByPatient = async (patientId) => {
     const { data } = await api.get(`/quizzes/patient/${patientId}`);
-    return data; // Quiz[]
+    return data;
   };
 
- 
   const attachQuizToReport = async () => {
     throw new Error("attachQuizToReport ya no es necesario: usa submitQuiz(quizId, answers, reportId)");
   };

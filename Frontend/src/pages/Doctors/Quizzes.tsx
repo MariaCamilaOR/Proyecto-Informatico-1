@@ -15,69 +15,12 @@ import {
   Input,
   InputGroup,
   InputRightElement,
-  Checkbox,
-  Textarea,
   useToast,
-  Divider,
 } from "@chakra-ui/react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 
-// ---------- Helpers para mostrar frases humanas ----------
-type AnyRec = Record<string, any>;
-
-function safeParse(value: unknown): AnyRec {
-  if (typeof value === "string") {
-    try { return JSON.parse(value); } catch { return {}; }
-  }
-  return (value as AnyRec) || {};
-}
-
-function joinWithAnd(list: string[]): string {
-  if (list.length <= 1) return list.join("");
-  return `${list.slice(0, -1).join(", ")} y ${list[list.length - 1]}`;
-}
-
-function humanizeWizardData(raw: unknown): string {
-  const d = safeParse(raw);
-
-  const parts: string[] = [];
-
-  if (Array.isArray(d.people) && d.people.length) {
-    parts.push(`aparece(n) ${joinWithAnd(d.people.map(String))}`);
-  }
-  if (Array.isArray(d.places) && d.places.length) {
-    parts.push(`en ${joinWithAnd(d.places.map(String))}`);
-  }
-  if (d.events) {
-    parts.push(`durante ${String(d.events)}`);
-  }
-  if (d.emotions) {
-    parts.push(`con emociones de ${String(d.emotions)}`);
-  }
-  if (d.details) {
-    parts.push(String(d.details));
-  }
-
-  let sentence = parts.length
-    ? `En la foto ${parts.join(", ")}.`
-    : "Descripción sin detalles.";
-
-  if (Array.isArray(d.tags) && d.tags.length) {
-    sentence += ` Etiquetas: ${joinWithAnd(d.tags.map(String))}.`;
-  }
-  return sentence;
-}
-
-function formatDescription(item: AnyRec): string {
-  if (item?.type === "text") return String(item.description || "");
-  if (item?.type === "wizard") return humanizeWizardData(item.data);
-  // Fallback genérico
-  return item?.description ? String(item.description) : "";
-}
-// ---------------------------------------------------------
-
-export default function MyPatients() {
+export default function DoctorsQuizzes() {
   const { user } = useAuth();
   const [patients, setPatients] = useState<any[]>([]);
   const [query, setQuery] = useState("");
@@ -115,8 +58,8 @@ export default function MyPatients() {
         <Box flex="1" p={{ base: 4, md: 6 }}>
           <VStack spacing={6} align="stretch">
             <Box>
-              <Heading mb={2}>👨‍⚕️ Mis Pacientes</Heading>
-              <Text color="gray.600">Aquí verás los pacientes que tienes asignados. Puedes buscar y abrir su detalle para ver respuestas a quizzes.</Text>
+              <Heading mb={2}>📋 Cuestionarios de mis pacientes</Heading>
+              <Text color="gray.600">Aquí podrás ver los pacientes que tienes asignados y acceder a las respuestas de los cuestionarios que les enviaste.</Text>
             </Box>
 
             <Box>
@@ -145,7 +88,7 @@ export default function MyPatients() {
                             </Box>
                           </HStack>
                           <HStack>
-                            <Button size="sm" colorScheme="blue" onClick={() => window.location.assign(`/doctors/patient/${p.id}`)}>Ver respuestas</Button>
+                            <Button size="sm" colorScheme="blue" onClick={() => nav(`/doctors/patient/${p.id}`)}>Ver respuestas</Button>
                           </HStack>
                         </HStack>
                       </CardBody>

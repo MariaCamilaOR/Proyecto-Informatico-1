@@ -39,12 +39,42 @@ export function useAuth(): AuthState {
     const unsub = onAuthStateChanged(auth, async (u: FbUser | null) => {
       try {
         if (!u) {
+          // No firebase user
+          // If frontend DEMO flag is set, try to retrieve demo user from backend (/api/users/me)
+          if (DEMO) {
+            try {
+              const res = await (await import("../lib/api")).api.get("/users/me");
+              const backendUser = res.data?.user;
+              if (backendUser) {
+                const demoRole = normalizeRole(String(backendUser.role)) || ROLES.PATIENT;
+                setState({
+                  user: {
+                    uid: backendUser.uid || "demo-user-123",
+                    email: backendUser.email || "demo@dyr.com",
+                    role: demoRole,
+                    linkedPatientIds: backendUser.linkedPatientIds || ["demo-patient-123"],
+                    displayName: backendUser.displayName || "Usuario Demo",
+                    isEmailVerified: true,
+                    createdAt: new Date().toISOString(),
+                  },
+                  loading: false,
+                  error: null,
+                  isAuthenticated: true,
+                });
+                return;
+              }
+            } catch (err) {
+              // fallback to local demo flag if backend not available
+            }
+          }
+
           // SIN demo: no role “pegado”
           if (!DEMO) {
             setState({ user: null, loading: false, error: null, isAuthenticated: false });
             return;
           }
-          // DEMO opcional
+
+          // DEMO optional fallback to localStorage
           const demo = localStorage.getItem("demo-user");
           const demoRole = normalizeRole(localStorage.getItem("demo-role") || "") || ROLES.PATIENT;
           if (demo) {

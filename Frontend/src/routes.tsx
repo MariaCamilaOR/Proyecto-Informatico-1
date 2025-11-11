@@ -27,10 +27,12 @@ import RemindersSettings from "./pages/Reminders/Settings";
 
 import CaregiversManage from "./pages/Caregivers/Manage";
 import CaregiversPatients from "./pages/Caregivers/Patients";
+import CaregiverDescribe from "./pages/Caregivers/Describe";
 
 import DoctorsPatients from "./pages/Doctors/Patients";
 import MyPatients from "./pages/Doctors/MyPatients";
 import PatientDetail from "./pages/Doctors/PatientDetail";
+import DoctorsQuizzes from "./pages/Doctors/Quizzes";
 /** ===== Quizzes ===== */
 // OJO: carpeta singular "Quiz"
  // generar/administrar (doctor/caregiver)
@@ -39,6 +41,7 @@ import QuizManage from "./pages/Doctors/QuizManage";
 
 import QuizTake from "./pages/Quiz/Take";
 import PatientQuizResults from "./pages/Patient/QuizResults";
+import AvailableQuizzes from "./pages/Quiz/Available";
 
 export const appRoutes = (
   <>
@@ -103,6 +106,16 @@ export const appRoutes = (
         <ProtectedRoute>
           <RoleGuard allowed={["CAREGIVER"]}>
             <PhotosUpload />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/cuidador/describir"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["CAREGIVER"]}>
+            <CaregiverDescribe />
           </RoleGuard>
         </ProtectedRoute>
       }
@@ -226,6 +239,16 @@ export const appRoutes = (
       }
     />
     <Route
+      path="/quiz/available"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["PATIENT"]}>
+            <AvailableQuizzes />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/quiz/manage/:patientId"
       element={
         <ProtectedRoute>
@@ -268,11 +291,21 @@ export const appRoutes = (
       }
     />
     <Route
+      path="/doctors/quizzes"
+      element={
+        <ProtectedRoute>
+          <RoleGuard allowed={["DOCTOR"]}>
+            <DoctorsQuizzes />
+          </RoleGuard>
+        </ProtectedRoute>
+      }
+    />
+    <Route
       path="/doctors/mis-pacientes"
       element={
         <ProtectedRoute>
           <RoleGuard allowed={["DOCTOR"]}>
-            <MyPatients />
+            <Navigate to="/doctors/patients" replace />
           </RoleGuard>
         </ProtectedRoute>
       }

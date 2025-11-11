@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Box, VStack, HStack, Text, Card, CardBody, Badge, Progress, Grid, GridItem,
   Button, Select, Stat, StatLabel, StatNumber, StatHelpText, StatArrow,
-  Spinner, Alert, AlertIcon,
+  Spinner, Alert, AlertIcon, Flex,
 } from "@chakra-ui/react";
 import { FaChartLine, FaCalendarAlt, FaUser, FaBrain, FaEye } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
@@ -23,6 +23,15 @@ interface ReportData {
   averageCoherence: number;
   lastSession: string | number | Date;
   recommendations: string[];
+  perPhoto?: {
+    [photoId: string]: {
+      count: number;
+      sum?: number;
+      avg: number;
+      title?: string;
+      lastAttempt?: string | number | Date;
+    };
+  };
 }
 
 interface SimpleReportProps {
@@ -276,6 +285,48 @@ export function SimpleReport({
           </VStack>
         </CardBody>
       </Card>
+
+      {/* Desglose por Foto */}
+      {d.perPhoto && Object.keys(d.perPhoto).length > 0 && (
+        <Card w="full">
+          <CardBody>
+            <VStack spacing={4} align="stretch">
+              <Text fontWeight="bold" fontSize="lg">📸 Desglose por Foto</Text>
+              <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
+                {Object.entries(d.perPhoto).map(([photoId, data]) => (
+                  <Card key={photoId} variant="outline">
+                    <CardBody>
+                      <VStack spacing={3} align="stretch">
+                        <HStack justify="space-between">
+                          <Text fontWeight="bold">{data.title || `Foto #${photoId.slice(0, 8)}`}</Text>
+                          <Badge colorScheme={getScoreColor(data.avg)}>{data.avg}%</Badge>
+                        </HStack>
+                        
+                        <Grid templateColumns="repeat(2, 1fr)" gap={2}>
+                          <Box>
+                            <Text fontSize="sm" color="gray.600">Intentos</Text>
+                            <Text fontSize="lg" fontWeight="semibold">{data.count}</Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="sm" color="gray.600">Promedio</Text>
+                            <Progress value={data.avg} colorScheme={getScoreColor(data.avg)} size="sm" mt={1} />
+                          </Box>
+                        </Grid>
+                        
+                        {data.lastAttempt && (
+                          <Text fontSize="xs" color="gray.500">
+                            Último intento: {new Date(data.lastAttempt).toLocaleDateString("es-ES")}
+                          </Text>
+                        )}
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
+              </Grid>
+            </VStack>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Info */}
       <Card w="full">
