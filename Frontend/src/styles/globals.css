@@ -229,10 +229,11 @@ a:hover{
 
 /* ===== Portal toolbars / filtros ===== */
 .portal{ 
-  width: 95vw; 
-  max-width: 2000px; 
-  margin: 0 auto; 
+  width: 92vw; 
+  max-width: 1100px; 
+  margin: 18px auto; 
   background: var(--bg) !important;
+  padding: 8px 12px;
 }
 .portal-header{
   display: flex; 
@@ -405,22 +406,23 @@ a:hover{
 
 /* === Sidebar === */
 .dyr-sidebar {
-  width: 250px;
+  width: 220px;
   background: var(--bg);
-  border-right: 2px solid var(--border);
-  min-height: 100vh;
-  padding: 16px;
+  border-right: 1px solid var(--border);
+  min-height: calc(100vh - 72px);
+  padding: 18px 12px;
 }
 
 .dyr-sidebar a {
   display: block;
   color: var(--text);
   font-family: "Times New Roman", serif;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 8px;
-  transition: all .2s ease;
+  transition: all .16s ease;
   text-decoration: none;
   border: 1px solid transparent;
+  font-size: 15px;
 }
 
 .dyr-sidebar a:hover {
@@ -458,8 +460,24 @@ a:hover{
     padding: 12px;
   }
   /* Portal becomes fluid on small screens but still constrained by max-width */
-  .portal { width: 96vw; max-width: 2000px; }
+  .portal { width: 96vw; max-width: 1100px; }
 }
+
+/* Navbar styling for consistent height and spacing */
+.dyr-navbar{
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,250,255,0.9));
+}
+
+/* Main content adjustments so portal sits nicely beside the sidebar */
+.portal { box-sizing: border-box; }
 
 @media (max-width: 600px) {
   /* Make sidebar links slightly more compact on narrow screens */

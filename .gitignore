@@ -125,3 +125,7 @@ playwright/.cache/
 echo Backend/keys/>> .gitignore
 echo Backend/keys/*.json>> .gitignore
 Backend/keys/
+
+# Ignore accidentally compiled JS inside frontend source
+Frontend/src/**/*.js
+Frontend/src/**/*.js.map

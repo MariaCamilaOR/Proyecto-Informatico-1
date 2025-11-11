@@ -8,11 +8,29 @@ const roleOf = (u: any) => String(u?.role || "").toLowerCase();
 const isLinked = (u: any, patientId: string) =>
   Array.isArray(u?.linkedPatientIds) && u.linkedPatientIds.includes(patientId);
 
+// Normaliza booleans Y/N por campos básicos
+function buildCaregiverYN(data: any) {
+  const yn = {
+    hasEvents: !!data?.events,
+    hasPeople: Array.isArray(data?.people) ? data.people.length > 0 : !!data?.people,
+    hasPlaces: !!data?.places,
+    hasEmotions: !!data?.emotions,
+    hasDetails: !!data?.details,
+  };
+  return [
+    { itemId: "hasEvents", yn: yn.hasEvents },
+    { itemId: "hasPeople", yn: yn.hasPeople },
+    { itemId: "hasPlaces", yn: yn.hasPlaces },
+    { itemId: "hasEmotions", yn: yn.hasEmotions },
+    { itemId: "hasDetails", yn: yn.hasDetails },
+  ];
+}
+
 // POST /api/descriptions/text
 router.post("/text", async (req, res) => {
   try {
     const user = (req as any).user;
-    const { patientId, photoId, title, description } = req.body || {};
+    const { patientId, photoId, title, description, data } = req.body || {};
     if (!patientId || !photoId || !description) return res.status(400).json({ error: "missing_fields" });
 
     const role = roleOf(user);
@@ -29,17 +47,25 @@ router.post("/text", async (req, res) => {
       type: "text",
       title: title || null,
       description,
+      data: data || null, // opcional: { events, people[], places, emotions, details }
       authorUid: user?.uid || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // Actualiza la foto con un resumen (opcional)
+    // Actualiza la foto con resumen y caregiverAnswers (si hay data)
     try {
       const photoRef = firestore.collection("photos").doc(photoId);
-      const photoDoc = await photoRef.get();
-      if (photoDoc.exists) await photoRef.set({ description }, { merge: true });
+      const caregiverAnswers = buildCaregiverYN(data || {});
+      await photoRef.set(
+        {
+          description: String(description).slice(0, 512),
+          caregiverAnswers, // [{ itemId, yn }]
+          caregiverAnswersUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
     } catch (err) {
-      console.warn("Failed to update photo with description", err);
+      console.warn("Failed to update photo with description/caregiverAnswers", err);
     }
 
     const doc = await docRef.get();
@@ -74,19 +100,21 @@ router.post("/wizard", async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // Si hay data.details, guarda un resumen en la foto
+    // Guardar resumen + caregiverAnswers en la photo
     try {
-      const summary =
-        typeof data === "object" && data && (data as any).details
-          ? String((data as any).details).slice(0, 512)
-          : null;
-      if (summary) {
-        const photoRef = firestore.collection("photos").doc(photoId);
-        const photoDoc = await photoRef.get();
-        if (photoDoc.exists) await photoRef.set({ description: summary }, { merge: true });
-      }
+      const summary = typeof data?.details === "string" ? data.details.slice(0, 512) : null;
+      const caregiverAnswers = buildCaregiverYN(data);
+      const photoRef = firestore.collection("photos").doc(photoId);
+      await photoRef.set(
+        {
+          description: summary,
+          caregiverAnswers,
+          caregiverAnswersUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
     } catch (err) {
-      console.warn("Failed to update photo with wizard summary", err);
+      console.warn("Failed to update photo with wizard summary/caregiverAnswers", err);
     }
 
     const doc = await docRef.get();

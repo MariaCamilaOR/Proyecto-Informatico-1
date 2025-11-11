@@ -13,9 +13,16 @@ export async function verifyTokenMiddleware(req: Request, res: Response, next: N
   // Dev rápido
   if (process.env.SKIP_AUTH === "true") {
     const demoUid = process.env.DEMO_UID || "demo-user-123";
-    const demoRole = (process.env.DEMO_ROLE as Role) || "patient";
+    const demoRole = (process.env.DEMO_ROLE as Role) || "caregiver";
     const demoPatient = process.env.DEMO_PATIENT_ID || "demo-patient-123";
-    (req as any).user = { uid: demoUid, role: demoRole, linkedPatientIds: [demoPatient] } as AuthedUser;
+    console.log("Using demo auth:", { demoUid, demoRole, demoPatient });
+    (req as any).user = { 
+      uid: demoUid, 
+      role: demoRole, 
+      linkedPatientIds: [demoPatient],
+      // Permisos adicionales para desarrollo
+      permissions: ["upload_photos_for_patient", "describe_photos_for_patient", "view_patient_photos"]
+    } as AuthedUser;
     return next();
   }
 

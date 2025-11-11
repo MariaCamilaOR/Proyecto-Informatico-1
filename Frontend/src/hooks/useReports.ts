@@ -17,6 +17,15 @@ export interface ReportSummary {
   averageCoherence: number;
   lastSession: string | number | Date;
   recommendations: string[];
+  perPhoto?: {
+    [photoId: string]: {
+      count: number;
+      sum: number;
+      avg: number;
+      title?: string;
+      lastAttempt?: string | number | Date;
+    };
+  };
 }
 
 /** Lista de reportes por paciente (rango opcional) */
