@@ -17,7 +17,7 @@ Frontend público: https://proyecto-pi-1-frontend.onrender.com/login
 
 > Debido a un problema en el despliegue del backend (onrender) aún sin solución estable, el frontend desplegado necesita que corras el backend en tu máquina para funcionar correctamente. Si quieres acceder desde otra red/equipo, expón tu backend local con un túnel (ej. `ngrok`, `cloudflared`) y actualiza `runtime-config.js` en `Frontend/public/` con la URL pública.
 
-adicionalmente, se necesita crear la ruta de Backend/keys utilizando los comandos abajo y colocar dentro el .json para poder cargar la base de datos
+adicionalmente, se necesita crear la ruta de Backend/keys utilizando los comandos abajo y colocar dentro el .json para poder cargar la base de datos (Este mismo va adjuntado al zip del proyecto que se entrego mediante el campus virtual)
 
 ```powershell
 # Backend
