@@ -102,10 +102,16 @@ export default function QuizTake() {
       setSubmitting(true);
       // Convertir map de respuestas a array con la forma que espera el backend
       // backend espera: answers: [{ itemId, answerIndex?, yn? }]
-      const answersArray = Object.entries(answers).map(([itemId, val]) => ({
-        itemId,
-        yn: val === "yes",
-      }));
+      const answersArray = (quiz.items || []).map((it) => {
+        const val = answers[it.id];
+        if (it.type === "mc") {
+          // puede ser number o string que represente un número
+          const idx = typeof val === "number" ? val : Number(val);
+          return { itemId: it.id, answerIndex: Number.isNaN(idx) ? undefined : idx };
+        }
+        // yn question
+        return { itemId: it.id, yn: val === "yes" };
+      });
       const payload = { answers: answersArray };
       const r = await api.post(`/quizzes/${id}/submit`, payload);
 

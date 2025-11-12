@@ -73,22 +73,116 @@ const toMillis = (v: any) => {
  */
 router.post("/generate", async (req, res) => {
   try {
-    const { patientId, photoId, limitPerDesc = 5 } = (req.body || {}) as {
-      patientId?: string; photoId?: string; limitPerDesc?: number;
+    const { patientId, photoId, descriptionIds, limitPerDesc = 5 } = (req.body || {}) as {
+      patientId?: string; photoId?: string; descriptionIds?: string[]; limitPerDesc?: number;
     };
     if (!patientId) return res.status(400).json({ error: "patientId requerido" });
     if (!allowPatientContext(req, patientId)) return res.status(403).json({ error: "forbidden_patient" });
 
-    const authUser = getAuthUser(req);
+  const authUser = getAuthUser(req);
 
-    let items: QuizItem[] = [];
-    let photoData: any = null;
+  let items: QuizItem[] = [];
+  let photoData: any = null;
+  // photoId may come from body or be selected from chosen description
+  let selectedPhotoId: string | null = photoId || null;
 
-    if (photoId) {
+    if (Array.isArray(descriptionIds) && descriptionIds.length > 0) {
+      // Generar quiz a partir de descripciones seleccionadas por el doctor.
+      // Elegimos una descripción aleatoria entre las seleccionadas para mostrar su foto,
+      // y usamos el conjunto combinado de todas las descripciones seleccionadas para formar distractores.
+      const descSnaps = await Promise.all(
+        descriptionIds.map((did) => firestore.collection("descriptions").doc(did).get())
+      );
+      const descs = descSnaps.filter(d => d.exists).map(d => ({ id: d.id, ...(d.data() as any) }));
+      if (descs.length === 0) return res.status(400).json({ error: "no_descriptions_selected" });
+
+      const chosenDesc = descs[Math.floor(Math.random() * descs.length)];
+      selectedPhotoId = chosenDesc.photoId || null;
+
+      // Traer metadata de la foto seleccionada (para obtener url/storagePath)
+      if (selectedPhotoId) {
+        try {
+          const pSnap = await firestore.collection("photos").doc(String(selectedPhotoId)).get();
+          if (pSnap.exists) {
+            photoData = pSnap.data();
+            // intentar signedUrl si hace falta
+            try {
+              if (!photoData.url && photoData.storagePath) {
+                const bucket = admin.storage().bucket();
+                const file = bucket.file(String(photoData.storagePath));
+                const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
+                const [signed] = await file.getSignedUrl({ action: "read", expires });
+                photoData.url = signed;
+              }
+            } catch (err) {
+              console.warn("[quizzes.generate] could not generate signedUrl for chosen description photo", String(err));
+            }
+            if (photoData.patientId !== patientId) return res.status(403).json({ error: "photo_not_for_patient" });
+          }
+        } catch (err) {
+          console.warn("[quizzes.generate] error fetching chosen photo", String(err));
+        }
+      }
+
+      // Collect pools from all selected descriptions
+      const collect = (key: string) => {
+        const s = new Set<string>();
+        for (const d of descs) {
+          const v = d.data && d.data[key];
+          if (Array.isArray(v)) v.forEach((x: any) => x && s.add(String(x)));
+          else if (v) s.add(String(v));
+        }
+        return Array.from(s).filter(Boolean);
+      };
+
+      const pools = {
+        people: collect("people"),
+        places: collect("places"),
+        events: collect("events"),
+        emotions: collect("emotions"),
+      };
+
+      const addMcFromChosen = (prompt: string, field: string, pool: string[]) => {
+        const v = chosenDesc.data && chosenDesc.data[field];
+        const chosenVal = Array.isArray(v) ? v[0] : v;
+        if (!chosenVal) return;
+        const correct = String(chosenVal);
+        const distractors = pickN(pool.filter(x => x !== correct), 3);
+        const options = uniq([correct, ...distractors]);
+        if (options.length < 2) return;
+        const shuffled = shuffle(options);
+        const correctIndex = shuffled.findIndex(o => o === correct);
+        items.push({ id: mkId(), type: "mc", prompt, options: shuffled, correctIndex, weight: 1 });
+      };
+
+      addMcFromChosen("¿Quién aparece en la foto?", "people", pools.people);
+      addMcFromChosen("¿Dónde fue tomada la foto?", "places", pools.places);
+      addMcFromChosen("¿Qué estaba ocurriendo?", "events", pools.events);
+      addMcFromChosen("¿Cómo te sentías?", "emotions", pools.emotions);
+
+      if (items.length > Number(limitPerDesc)) items = items.slice(0, Number(limitPerDesc));
+    } else if (photoId) {
       // ---- Generar por FOTO (caregiverAnswers como gabarito) ----
-      const photoSnap = await firestore.collection("photos").doc(photoId).get();
+  const photoSnap = await firestore.collection("photos").doc(String(selectedPhotoId)).get();
       if (!photoSnap.exists) return res.status(404).json({ error: "photo_not_found" });
       photoData = photoSnap.data() as any;
+      // Asegurar que tenemos una URL pública/firmada para la foto. Si la foto sólo tiene storagePath,
+      // intentamos generar una signedUrl desde Cloud Storage.
+      try {
+        if (!photoData.url && photoData.storagePath) {
+          try {
+            const bucket = admin.storage().bucket();
+            const file = bucket.file(String(photoData.storagePath));
+            const expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 días
+            const [signed] = await file.getSignedUrl({ action: "read", expires });
+            photoData.url = signed;
+          } catch (signErr) {
+            console.warn("[quizzes.generate] could not generate signedUrl for photo", photoData.storagePath, String(signErr));
+          }
+        }
+      } catch (err) {
+        console.warn("[quizzes.generate] unexpected error while preparing photo url", String(err));
+      }
       if (photoData.patientId !== patientId) {
         return res.status(403).json({ error: "photo_not_for_patient" });
       }
@@ -153,21 +247,22 @@ router.post("/generate", async (req, res) => {
     }
 
       const docRef = await firestore.collection("quizzes").add({
-      patientId,
-      photoId: photoId || null,
-      photoUrl: photoData?.url || null,
+        patientId,
+        photoId: selectedPhotoId || null,
+        photoUrl: photoData?.url || null,
       createdBy: authUser?.uid || null,
       status: "open",
       items,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });    // Enviar notificación al paciente
-    await firestore.collection("notifications").add({
+      await firestore.collection("notifications").add({
       targetUid: patientId,
-      type: "NEW_QUIZ",
-      message: photoId ? "Tu doctor ha creado un nuevo cuestionario sobre una foto" : "Tu doctor ha creado un nuevo cuestionario",
+      // Usamos el tipo que espera el frontend ('quiz_invite' o 'quiz_request')
+      type: "quiz_invite",
+        message: selectedPhotoId ? "Tu doctor ha creado un nuevo cuestionario sobre una foto" : "Tu doctor ha creado un nuevo cuestionario",
       payload: {
         quizId: docRef.id,
-        photoId: photoId || null,
+          photoId: selectedPhotoId || null,
         photoUrl: photoData?.url || null
       },
       createdBy: authUser?.uid || null,
@@ -232,7 +327,25 @@ router.post("/:id/submit", async (req, res) => {
       totalWeight += w;
 
       if (it.type === "mc") {
-        if (typeof a.answerIndex === "number" && a.answerIndex === it.correctIndex) correct += w;
+        // Support different shapes for correctIndex and answers:
+        // - item.correctIndex can be a number or an array of numbers (multiple correct options)
+        // - submitted answer can be { answerIndex: number } or { answerIndices: number[] }
+        const correctIdxs = Array.isArray(it.correctIndex)
+          ? it.correctIndex.map((x: any) => Number(x))
+          : (typeof it.correctIndex === 'number' ? [Number(it.correctIndex)] : []);
+
+        if (Array.isArray(a.answerIndices)) {
+          // multi-select submitted
+          const submitted = a.answerIndices.map((x: any) => Number(x));
+          if (correctIdxs.length > 0) {
+            const matches = correctIdxs.filter((ci: number) => submitted.includes(ci)).length;
+            const itemScore = (matches / correctIdxs.length) * w;
+            correct += itemScore;
+          }
+        } else if (typeof a.answerIndex === "number") {
+          // single-select submitted
+          if (correctIdxs.includes(Number(a.answerIndex))) correct += w;
+        }
       } else if (it.type === "yn") {
         // Comparación CON el cuidador si tenemos gabarito; si no, consideramos "sí" como acierto
         if (careMap.size > 0 && it.field) {
