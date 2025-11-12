@@ -4,7 +4,7 @@ import { Box, Heading, Text, VStack, Card, CardBody, HStack, Button, Avatar, Inp
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
 export default function MyPatients() {

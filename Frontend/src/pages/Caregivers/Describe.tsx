@@ -25,7 +25,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useAuth } from "../../hooks/useAuth";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 

@@ -43,7 +43,7 @@ export function useAuth(): AuthState {
           // If frontend DEMO flag is set, try to retrieve demo user from backend (/api/users/me)
           if (DEMO) {
             try {
-              const res = await (await import("../lib/api")).api.get("/users/me");
+              const res = await (await import("../api")).api.get("/users/me");
               const backendUser = res.data?.user;
               if (backendUser) {
                 const demoRole = normalizeRole(String(backendUser.role)) || ROLES.PATIENT;

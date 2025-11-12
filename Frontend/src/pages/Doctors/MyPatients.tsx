@@ -20,7 +20,7 @@ import {
   useToast,
   Divider,
 } from "@chakra-ui/react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 
 // ---------- Helpers para mostrar frases humanas ----------

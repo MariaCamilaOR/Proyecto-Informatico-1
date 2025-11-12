@@ -3,7 +3,7 @@ import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { SimpleReport } from "../../components/Reports/SimpleReport";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission, normalizeRole } from "../../lib/roles";
 

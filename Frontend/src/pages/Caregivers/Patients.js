@@ -5,7 +5,7 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useToast } from "@chakra-ui/react";
 import { Input, InputGroup, InputRightElement } from "@chakra-ui/react";
 export default function CaregiversPatients() {

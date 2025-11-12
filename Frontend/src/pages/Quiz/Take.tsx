@@ -6,7 +6,7 @@ import {
 } from "@chakra-ui/react";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 
 type Yn = "yes" | "no";
