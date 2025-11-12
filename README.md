@@ -17,10 +17,28 @@ Frontend público: https://proyecto-pi-1-frontend.onrender.com/login
 
 > Debido a un problema en el despliegue del backend (onrender) aún sin solución estable, el frontend desplegado necesita que corras el backend en tu máquina para funcionar correctamente. Si quieres acceder desde otra red/equipo, expón tu backend local con un túnel (ej. `ngrok`, `cloudflared`) y actualiza `runtime-config.js` en `Frontend/public/` con la URL pública.
 
+adicionalmente, se necesita crear la ruta de Backend/keys utilizando los comandos
+
+```powershell
+# Backend
+cd Backend
+mkdir keys
+mv ../service-account.json keys/ #O arrastrarlo a la ruta despues de hacer el mkdir keys
+
+```
+Estructura necesaria para el backend local
+Backend/
+ ├── keys/
+ │    └── service-account.json
+ ├── src/
+ ├── package.json
+ └── ...
+
+ 
 Pasos:
 ```powershell
-# 1. Clonar el repo (si no lo tienes)
-git clone <repo-url>
+# 1. Clonar el repo 
+git clone [<repo-url>](https://github.com/MariaCamilaOR/Proyecto-Informatico-1)
 cd Proyecto-Informatico-1
 
 # 2. Iniciar Backend local
@@ -33,11 +51,11 @@ npm run dev
 #    Inicia sesión / registra y el frontend hará peticiones a tu backend local.
 ```
 
+Estructura del backend pa
+
 Verifica salud del backend: http://localhost:3000/api/health → `{"ok": true}`
 
 ### Opción B: Ejecutar Todo Localmente
-
-adicionalmente, se necesita crear la ruta de Backend/keys utilizando los comandos
 
 
 ```powershell
