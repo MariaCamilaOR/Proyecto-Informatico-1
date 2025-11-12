@@ -1,225 +1,267 @@
+<div align="center">
+
 # DoYouRemember 🧠
 
-**Aplicación web para detección temprana y monitoreo del Alzheimer a partir de descripciones de fotos**
+Aplicación web para apoyo a memoria (descripciones de fotos, quizzes y reportes) para pacientes con Alzheimer. Proyecto académico CAFESAJU (UAO).
 
-Proyecto desarrollado para CAFESAJU (UAO) con arquitectura de microservicios.
+**➡️ Inicio rápido (2 min) justo debajo.**
+</div>
 
-## 🏗️ Arquitectura
+---
 
-### Backend (Serverless)
-- **Runtime**: Node.js 20 LTS + TypeScript
-- **Plataforma**: Vercel Functions
-- **Base de datos**: Firebase Firestore (NoSQL)
-- **Autenticación**: Firebase Auth con roles
-- **Almacenamiento**: Firebase Storage
-- **Tareas programadas**: Vercel Cron
+## 🚀 Inicio Rápido
 
-### Frontend (SPA)
-- **Framework**: React 18 + Vite + TypeScript
-- **UI**: Chakra UI
-- **Routing**: React Router 6
-- **Estado**: TanStack React Query
-- **Despliegue**: Firebase Hosting
+### Opción A: Usar el Frontend Desplegado (requiere Backend local)
 
-## 🚀 Instalación y Configuración
+Frontend público: https://proyecto-pi-1-frontend.onrender.com/login
 
-### Backend
+> Debido a un problema en el despliegue del backend (onrender) aún sin solución estable, el frontend desplegado necesita que corras el backend en tu máquina para funcionar correctamente. Si quieres acceder desde otra red/equipo, expón tu backend local con un túnel (ej. `ngrok`, `cloudflared`) y actualiza `runtime-config.js` en `Frontend/public/` con la URL pública.
 
-```bash
+Pasos:
+```powershell
+# 1. Clonar el repo (si no lo tienes)
+git clone <repo-url>
+cd Proyecto-Informatico-1
+
+# 2. Iniciar Backend local
 cd Backend
 npm install
-cp .env.sample .env
-# Configurar variables de entorno en .env
 npm run dev
+# Servirá en http://localhost:3000
+
+# 3. Abrir el Frontend desplegado en el navegador
+#    Inicia sesión / registra y el frontend hará peticiones a tu backend local.
 ```
 
-### Frontend
+Verifica salud del backend: http://localhost:3000/api/health → `{"ok": true}`
 
-```bash
+### Opción B: Ejecutar Todo Localmente
+
+adicionalmente, se necesita crear la ruta de Backend/keys utilizando los comandos
+
+
+```powershell
+# Backend
+cd Backend
+mkdir keys
+mv ../service-account.json keys/ #O arrastrarlo a la ruta despues de hacer el mkdir keys
+
+
+cd Backend
+npm install
+npm run dev
+
+# En otra terminal
 cd Frontend
 npm install
-cp .env.sample .env
-# Configurar variables de entorno en .env
 npm run dev
 ```
 
-## 📋 Funcionalidades
+URLs por defecto:
+- Backend: http://localhost:3000
+- Frontend: http://localhost:5173
 
-### Para Pacientes
-- Subir fotos personales
-- Describir fotos por texto o voz
-- Ver reportes de progreso
-- Recibir recordatorios
+---
 
-### Para Cuidadores
-- Monitorear pacientes vinculados
-- Ver alertas y tendencias
-- Configurar notificaciones
+## 🧱 Arquitectura General
 
-### Para Doctores
-- Generar reportes detallados
-- Analizar métricas de recall y coherencia
-- Configurar políticas de alerta
+| Capa      | Tech | Notas |
+|-----------|------|-------|
+| Backend   | Node.js 20 + Express + TypeScript | Endpoints REST bajo `/api/*` |
+| Firebase  | Auth, Firestore, Storage | Roles y persistencia de fotos/descripciones |
+| Frontend  | React 18 + Vite + Chakra UI | SPA con React Query para estado remoto |
+| Observab. | (Opcional) Sentry | Errores y performance |
+
+### Flujos Clave
+1. **Descripción de Foto**: Cuidador/Paciente sube foto → se crea descripción (`/api/descriptions/wizard`) → se genera quiz (`/api/quizzes/generate`) → paciente responde → se calcula score → reportes agregados.
+2. **Generación de Reporte**: Envío de quizzes (`/api/quizzes/:id/submit`) → agregación resumen → endpoint reportes (`/api/reports/summary/:patientId`) → vista médico.
+
+---
+
+## 📁 Estructura (Resumen)
+
+```
+Backend/
+   src/
+      middleware/        # auth y verificación de tokens
+      routes/            # módulos Express: photos, reports, quizzes, etc.
+      firebaseAdmin.ts   # inicialización Firebase Admin
+   tests/               # unit & integration (Jest + Supertest)
+Frontend/
+   src/
+      pages/             # vistas agrupadas por feature
+      components/        # UI reutilizable
+      hooks/             # lógica de datos (React Query)
+      lib/               # api, auth, roles, tema, sentry
+   public/runtime-config.js  # override dinámico de base URL
+```
+
+---
 
 ## 🔐 Roles y Permisos
+- `PATIENT` – Acceso a sus fotos, quizzes y reportes.
+- `CAREGIVER` – Puede ver y apoyar pacientes vinculados.
+- `DOCTOR` – Vista analítica y reportes agregados.
 
-- **Patient**: Propietario de sus datos
-- **Caregiver**: Acceso a pacientes vinculados
-- **Doctor**: Acceso completo para análisis
+La verificación se hace mediante Firebase ID Token + claims personalizados (middleware `verifyTokenMiddleware`).
 
-## 📊 Métricas Analizadas
-
-- **Recall**: Capacidad de recordar detalles
-- **Coherencia**: Consistencia en las descripciones
-- **Tendencias**: Evolución temporal de las métricas
-
-## 🛠️ Desarrollo
-
-### Scripts disponibles
-
-**Backend:**
-- `npm run dev` - Desarrollo local con Vercel
-- `npm run build` - Compilar TypeScript
-- `npm run test` - Ejecutar pruebas
-- `npm run lint` - Linter
-
-**Frontend:**
-- `npm run dev` - Servidor de desarrollo
-- `npm run build` - Build para producción
-- `npm run preview` - Preview del build
-- `npm run test` - Pruebas unitarias
-- `npm run e2e` - Pruebas end-to-end
-
-## 📁 Estructura del Proyecto
-
-```
-DoURemember/
-├── Backend/                 # API Serverless
-│   ├── api/                # Endpoints Vercel
-│   ├── src/                # Código fuente
-│   │   ├── config/         # Configuración Firebase
-│   │   ├── middleware/     # Autenticación
-│   │   ├── lib/           # Librerías internas
-│   │   ├── routes/        # Handlers de rutas
-│   │   └── types/         # Tipos TypeScript
-│   ├── tests/             # Pruebas
-│   └── vercel.json        # Configuración Vercel
-├── Frontend/               # SPA React
-│   ├── src/
-│   │   ├── components/    # Componentes reutilizables
-│   │   ├── hooks/         # Hooks personalizados
-│   │   ├── lib/          # Configuración y utilidades
-│   │   ├── pages/        # Páginas de la aplicación
-│   │   ├── types/        # Tipos TypeScript
-│   │   └── styles/       # Estilos globales
-│   └── firebase.json     # Configuración Firebase Hosting
-└── README.md
-```
+---
 
 ## 🔧 Variables de Entorno
 
-### Configuración Inicial
-
-1. **Copiar los archivos de ejemplo:**
-   ```bash
-   # Backend
-   cd Backend
-   cp .env.sample .env
-   
-   # Frontend
-   cd Frontend
-   cp .env.sample .env
-   ```
-
-2. **Editar los archivos `.env`** con tus valores reales (nunca commitees estos archivos).
-
-### Backend (.env)
-
+### Backend (`Backend/.env.local`)
+Ejemplo mínimo:
 ```env
-# Firebase - Credenciales de servicio (JSON completo como string)
-# 1. Ve a Firebase Console > Project Settings > Service Accounts
-# 2. Genera una nueva clave privada
-# 3. Convierte el JSON completo a una cadena de una sola línea (sin saltos de línea)
-GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
-
-# Firebase - Información del proyecto
-FIREBASE_PROJECT_ID=dyr-project
-FIREBASE_STORAGE_BUCKET=dyr-project.appspot.com
-
-# CORS - Orígenes permitidos (separados por coma si hay múltiples)
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-
-# Sentry - Monitoreo de errores (opcional)
-SENTRY_DSN=https://...
-
-# STT Provider - API Key para transcripción de voz (opcional)
-STT_PROVIDER_API_KEY=tu-api-key-aqui
+SERVICE_ACCOUNT_KEY_PATH=./keys/service-account.json
+PORT=3000
+FIREBASE_STORAGE_BUCKET=doyouremember-pi.firebasestorage.app
 ```
 
-**⚠️ Importante:** 
-- En Vercel (producción), configura estas variables en el dashboard: Settings > Environment Variables
-- El archivo `.env` solo se usa para desarrollo local
+Alternativa: usar `SERVICE_ACCOUNT_KEY_JSON` con el contenido inline del service account. Mantén las claves fuera del repo.
 
-### Frontend (.env)
-
+### Frontend (`Frontend/.env.local`) (si decides no usar el runtime-config)
 ```env
-# API Backend - URL base de la API
-# Desarrollo: http://localhost:3000/api
-# Producción: https://tu-backend.vercel.app/api
 VITE_API_BASE_URL=http://localhost:3000/api
-
-# Firebase - Configuración del proyecto
-# Obtén estos valores desde Firebase Console > Project Settings > General > Your apps > Web app
-VITE_FIREBASE_API_KEY=tu-api-key
-VITE_FIREBASE_AUTH_DOMAIN=tu-proyecto.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=tu-proyecto-id
-VITE_FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abc123
-VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
-
-# Sentry - Monitoreo de errores (opcional)
-VITE_SENTRY_DSN=https://...
+VITE_FIREBASE_API_KEY=... 
+VITE_FIREBASE_AUTH_DOMAIN=... 
+VITE_FIREBASE_PROJECT_ID=... 
+VITE_FIREBASE_STORAGE_BUCKET=... 
+VITE_FIREBASE_APP_ID=... 
 ```
 
-**⚠️ Importante:** 
-- En Vite, todas las variables deben tener el prefijo `VITE_` para ser expuestas al cliente
-- El archivo `.env` solo se usa para desarrollo local
-- En producción (Firebase Hosting), configura estas variables en el dashboard de Firebase o durante el build
+El frontend desplegado utiliza `public/runtime-config.js` para inyectar `window.__VITE_API_BASE_URL`; puedes editarlo previo a build o despliegue.
 
-### Seguridad
+### Buenas Prácticas
+✅ Nunca subir `.env.local` al repositorio.  
+✅ Proveer un `.env.sample` (pendiente, sugerido).  
+✅ Rotar claves comprometidas inmediatamente. 
 
-✅ **Hacer:**
-- Mantener `.env` en `.gitignore` (ya configurado)
-- Usar `.env.sample` como plantilla para otros desarrolladores
-- Configurar variables en el dashboard de Vercel/Firebase para producción
+---
 
-❌ **No hacer:**
-- Committear archivos `.env` al repositorio
-- Exponer API keys en el código fuente
-- Compartir credenciales por email o chat
+## 🛠️ Scripts Principales
 
-## 🚀 Despliegue
+### Backend
+| Script | Propósito |
+|--------|-----------|
+| `npm run dev` | Desarrollo (ts-node-dev) |
+| `npm run build` | Compila a `dist/` |
+| `npm start` | Ejecuta build compilado |
+| `npm test` | Pruebas Jest completas |
+| `npm run test:unit` | Solo unit tests |
+| `npm run test:integration` | Solo integración |
+| `npm run bootstrap` | Ayuda a credenciales (PowerShell) |
+| `npm run check-creds` | Verifica service account |
 
-### Backend (Vercel)
-```bash
+### Frontend
+| Script | Propósito |
+|--------|-----------|
+| `npm run dev` | Servidor Vite dev |
+| `npm run build` | Build producción |
+| `npm run preview` | Sirve el build local |
+| `npm test` | Unit + coverage |
+| `npm run e2e` | Playwright tests |
+
+---
+
+## 🧪 Testing Rápido
+
+```powershell
+# Backend
 cd Backend
-vercel --prod
+npm test
+
+# Frontend
+cd Frontend
+npm test
 ```
 
-### Frontend (Firebase Hosting)
+Para e2e (Playwright) asegúrate de tener browsers instalados: `npx playwright install`.
+
+---
+
+## 🩺 Endpoints Clave (Backend)
+- `GET /api/health` – Ping.
+- `GET /api/photos/patient/:id` – Fotos por paciente.
+- `POST /api/descriptions/wizard` – Crear descripción + quiz.
+- `POST /api/quizzes/generate` – Generar quiz desde descripción.
+- `POST /api/quizzes/:id/submit` – Enviar respuestas.
+- `GET /api/reports/summary/:patientId` – Reporte agregado.
+
+Todos (excepto `/api/health` y onboarding de usuarios) requieren `Authorization: Bearer <token>`.
+
+---
+
+## 🧩 Flujo de Datos (Detalle)
+```text
+CAREGIVER/PATIENT -> Subir Foto -> Descripción (wizard) -> Generar Quiz -> Responder Quiz
+-> Calcular Score -> Agregar a Reportes -> Doctor analiza métricas
+```
+
+Reportes agrupan métricas de: recall, coherencia, tendencias temporales.
+
+---
+
+## ⚠️ Problemas Conocidos y Workarounds
+| Problema | Causa | Mitigación |
+|----------|-------|------------|
+| Backend desplegado falla | Error intermitente en onrender | Ejecutar backend local / usar túnel público |
+| CORS bloquea peticiones desde frontend desplegado a backend local | Navegador no puede acceder a `localhost` desde hosting público | Usar túnel (ngrok) y poner URL pública en `runtime-config.js` |
+| Port ocupado (3000) | Otro proceso activo | Cambiar `PORT` en `.env.local` y actualizar `VITE_API_BASE_URL` |
+| Credenciales inválidas | Service account mal formateado | Usar `npm run check-creds` en Backend |
+
+---
+
+## 🔐 Seguridad Rápida
+- Limita acceso al service account.
+- Revisa reglas de Firestore (`firestore.rules`) y Storage (`storage.rules`) antes de prod.
+- Añade monitoreo (Sentry) configurando `SENTRY_DSN` (pendiente en código según necesidad).
+
+---
+
+## 📦 Despliegue (Futuro / Referencia)
+Backend ideal: migrar a Vercel Functions o Cloud Run con variables en panel.  
+Frontend: Firebase Hosting → editar `public/runtime-config.js` antes del build si cambia la API.
+
+### Pasos genéricos
 ```bash
-cd Frontend
+# Backend
+vercel --prod
+
+# Frontend
 npm run build
 firebase deploy
 ```
 
-## 📝 Licencia
-
-Proyecto académico para CAFESAJU (UAO)
+---
 
 ## 👥 Contribuidores
+- @MariaCamilaOR – Camila
+- @Juan-Franco63 – Juan Pablo Franco Herrera
+- @danielojedav19 – Daniel
 
-- @MariaCamilaOR - Camila
-- @Juan-Franco63 - Juan Pablo Franco Herrera  
-- @danielojedav19 - Daniel
+---
+
+## � Licencia
+Uso académico para CAFESAJU (UAO). No redistribuir credenciales.
+
+---
+
+## ✅ Checklist de Verificación Rápida
+- [ ] Backend corre y `GET /api/health` responde.
+- [ ] Frontend muestra login.
+- [ ] Claims / roles aplicados en endpoints protegidos.
+- [ ] Reportes generados tras enviar quizzes.
+
+Si algo falta o falla, abre Issue describiendo pasos para reproducir.
+
+---
+
+## 📝 Próximos Pasos Sugeridos
+- Agregar `.env.sample` en ambos paquetes.
+- Implementar subida firmada (signed URLs) para fotos.
+- Añadir paginación en listados de fotos/quizzes.
+- Integrar métricas de rendimiento (Web Vitals + Sentry performance).
+
+---
+
+¡Listo! Este README concentra el onboarding y operación del proyecto.
