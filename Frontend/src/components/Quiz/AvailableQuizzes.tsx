@@ -14,7 +14,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../lib/api';
+import { api } from '../../api';
 import { useAuth } from '../../hooks/useAuth';
 
 export const AvailableQuizzes = () => {

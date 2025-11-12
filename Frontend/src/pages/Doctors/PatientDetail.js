@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { Box, Heading, Text, VStack, Card, CardBody, HStack, Avatar, Button, Checkbox, Textarea, useToast, Divider } from "@chakra-ui/react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 import { useQuizzes } from "../../hooks/useQuizzes";
 

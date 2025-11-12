@@ -3,7 +3,7 @@ import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 
 export default function PatientCaretaker() {
   const { user } = useAuth();

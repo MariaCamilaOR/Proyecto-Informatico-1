@@ -16,7 +16,7 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { VoiceRecorder } from "../../components/VoiceRecording/VoiceRecorder";
 import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 
 export default function DescribeVoice() {
   const { user } = useAuth();

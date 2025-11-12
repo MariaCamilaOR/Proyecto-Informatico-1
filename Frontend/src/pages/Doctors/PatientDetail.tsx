@@ -26,7 +26,7 @@ import {
   Tag,
   Badge,
 } from "@chakra-ui/react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useAuth } from "../../hooks/useAuth";
 
 // ------------ Helpers de formateo ------------

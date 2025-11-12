@@ -19,7 +19,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { hasPermission } from "../../lib/roles";
 import { FaEye, FaChartLine, FaCamera } from "react-icons/fa";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { useToast } from "@chakra-ui/react";
 import { Input, InputGroup, InputRightElement } from "@chakra-ui/react";
 

@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Box, Heading, Text, Flex, VStack, Card, CardBody, Alert, AlertIcon, Select, FormControl, FormLabel } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
 import { Navbar } from "../../components/Layout/Navbar";
 import { Sidebar } from "../../components/Layout/Sidebar";

@@ -4,7 +4,7 @@ import { Sidebar } from "../../components/Layout/Sidebar";
 import { PhotoGallery } from "../../components/PhotoGallery/PhotoGallery";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { api } from "../../api";
 
 export default function PatientGallery() {
   const { user } = useAuth();

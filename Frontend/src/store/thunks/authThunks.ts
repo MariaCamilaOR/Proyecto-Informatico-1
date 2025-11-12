@@ -9,7 +9,7 @@ import {
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { api } from '../../lib/api';
+import { api } from '../../api';
 import type { Role } from '../../lib/roles';
 
 const isIgnorablePopupError = (code?: string) =>
